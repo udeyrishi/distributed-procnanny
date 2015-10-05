@@ -12,17 +12,16 @@ int main(void)
 {
 	int i;
     LogReport report;
-	char** words = getOutputFromProgram("ps", MAX_PROCESSES, MAX_PROCESS_LINE_LENGTH, &i, &report);
+    Process* processes = getRunningProcesses(MAX_PROCESSES, MAX_PROCESS_LINE_LENGTH, &i, &report);
+    printf("%d\n", i);
+
     int j;
-    for(j = 0; j < i; j++)
+    for(j = 0; j < i; ++j)
     {
-        printf("%s\n", words[j]);
+        Process this = processes[j];
+        printf("PID: %d, TTY: %s, TIME: %s, CMD: %s\n", this.pid, this.tty, this.time, this.cmd);
+        destroyProcess(&this);
     }
 
-    for (;i>=0;i--)
-    {
-        free(words[i]);
-    }
-    free(words);
     return 0;
 }

@@ -5,6 +5,34 @@
 #include <string.h>
 #include "memwatch.h"
 
+void createProcess(char* processString, Process* this)
+{
+    int pid = atoi(strtok(processString, " "));
+    this -> pid = pid;
+
+    char* tty = strtok(NULL, " ");
+    int ttyLen = strlen(tty);
+    this -> tty = (char*)malloc(sizeof(char)*ttyLen);
+    strcpy(this->tty, tty);
+
+    char* time = strtok(NULL, " ");
+    int timeLen = strlen(time);
+    this -> time = (char*)malloc(sizeof(char)*timeLen);
+    strcpy(this->time, time);
+
+    char* cmd = strtok(NULL, " ");
+    int cmdLen = strlen(cmd);
+    this -> cmd = (char*)malloc(sizeof(char)*cmdLen);
+    strcpy(this->cmd, cmd);    
+}
+
+void destroyProcess(Process* this)
+{
+    free(this->tty);
+    free(this->time);
+    free(this->cmd);
+}
+
 // Source: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
 char** getOutputFromProgram(const char* programName, int maxNumberLines, int maxLineLength, int * numberLinesRead, LogReport* report) 
 {
@@ -60,4 +88,44 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     *numberLinesRead = i;
 
     return words;
+}
+
+Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int* processesFound, LogReport* report)
+{
+    int i;
+    char** words = getOutputFromProgram("ps", maxNumberOfProcesses, maxProcessLength, &i, report);
+
+    if (words == NULL)
+    {
+        return (Process*)NULL;
+    }
+
+    //int numberProcs = i - 1;
+
+    // i-1 because first line is just the heading
+    Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
+    
+    if (processes == NULL)
+    {
+        report -> message = "Out of memory.";
+        report -> type = FATAL;
+        return (Process*)NULL;
+    }
+
+    int j;
+    for(j = 1; j < i; ++j)
+    {
+        createProcess(words[j], &processes[j]);
+        printf("PID: %d, TTY: %s, TIME: %s, CMD: %s\n", processes[j].pid, processes[j].tty, processes[j].time, processes[j].cmd);
+    }
+
+
+    for (j = 0; j < i; ++j)
+    {
+        free(words[i]);
+    }
+
+    *processesFound = i-1;
+
+    return processes;
 }
