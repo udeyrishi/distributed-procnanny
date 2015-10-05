@@ -5,8 +5,8 @@
 #include <sys/wait.h>
 #include "memwatch.h"
 
-#define MAX_PROCESSES 128;
-#define MAX_PROCESS_LINE_LENGTH 200;
+#define MAX_PROCESSES 128
+#define MAX_PROCESS_LINE_LENGTH 200
 
 int main(void)
 {
