@@ -100,8 +100,6 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
         return (Process*)NULL;
     }
 
-    //int numberProcs = i - 1;
-
     // i-1 because first line is just the heading
     Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
     
@@ -115,10 +113,8 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
     int j;
     for(j = 1; j < i; ++j)
     {
-        createProcess(words[j], &processes[j]);
-        printf("PID: %d, TTY: %s, TIME: %s, CMD: %s\n", processes[j].pid, processes[j].tty, processes[j].time, processes[j].cmd);
+        createProcess(words[j], &processes[j-1]);
     }
-
 
     for (j = 0; j < i; ++j)
     {
