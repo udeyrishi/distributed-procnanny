@@ -15,26 +15,33 @@ const char* PROGRAM_NAME = "procnanny";
 void killOtherProcNannys()
 {
     int num = 0;
-    Process* procs = getRunningProcesses(&num);
+    Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
     if (procs == NULL)
     {
+        if (num == 0)
+        {
+            // Nothing found
+            destroyProcessArray(procs, num);
+            return;
+        }
         exit(-1);
     }
 
     int i;
     for(i = 0; i < num; ++i)
     {
-        Process p = procs[i];
-        if (strcmp(p.cmd, PROGRAM_NAME) == 0 && getpid() != p.pid)
+        Process* p = procs[i];
+        if (getpid() != p->pid)
         {
             LogReport report;
-            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p.pid);
+            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p->pid);
             report.type = NORMAL;
             saveLogReport(report);
             safeFree(report.message);
-            if(!killProcess(p))
+            
+            if(!killProcess(*p))
             {
-                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p.pid);
+                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p->pid);
                 report.type = ERROR;
                 saveLogReport(report);
                 safeFree(report.message);
@@ -58,6 +65,8 @@ int main(int argc, char** argv)
     }
     int duration = atoi(config[0]);
     printf("%d\n", duration);
+    
+    /*
 	int numberProcesses;
     Process* processes = getRunningProcesses(&numberProcesses);
     if (processes == NULL)
@@ -65,8 +74,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    freeOutputFromProgram(config, configLength);
+    
     destroyProcessArray(processes, numberProcesses);
-
+    */
+    freeOutputFromProgram(config, configLength);
+    
     return 0;
 }

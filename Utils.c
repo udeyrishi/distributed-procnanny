@@ -71,3 +71,8 @@ char* numberStrngJoin(int first, const char* second)
     sprintf(str, "%d", first);
     return stringJoin(str, second);
 }
+
+Boolean compareStrings(const char* first, const char* second)
+{
+	return (Boolean)(strcmp(first, second) == 0);
+}

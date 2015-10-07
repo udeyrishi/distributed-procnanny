@@ -11,34 +11,63 @@
 
 #define STARTING_ALLOCATION_SIZE 128
 
+//private
+char* getNextStrTokString(char* init)
+{
+    char* next = strtok(init, " ");
+    int len = strlen(next);
+    char* p = (char*)malloc(sizeof(char)*(len+1));
+    strcpy(p, next);
+    return p;
+}
+
 // Constructor of a Process struct from a processString (output line from the ps command)
 void processConstructor(char* processString, Process* this)
 {
-    int pid = atoi(strtok(processString, " "));
-    this -> pid = (pid_t)pid;
+    this->user = getNextStrTokString(processString);
+    this->pid = atoi(strtok(NULL, " "));
+    this->cpu = atof(strtok(NULL, " "));
+    this->mem = atof(strtok(NULL, " "));
+    this->vsz = atoi(strtok(NULL, " "));
+    this->rss = atoi(strtok(NULL, " "));
+    this->tty = getNextStrTokString(NULL);
+    this->stat = getNextStrTokString(NULL);
+    this->start = getNextStrTokString(NULL);
+    this->time = getNextStrTokString(NULL);
 
-    char* tty = strtok(NULL, " ");
-    int ttyLen = strlen(tty);
-    this -> tty = (char*)malloc(sizeof(char)*(ttyLen+1));
-    strcpy(this->tty, tty);
+    this->command = (char*)malloc(sizeof(char));
+    *this->command = '\0';
 
-    char* time = strtok(NULL, " ");
-    int timeLen = strlen(time);
-    this -> time = (char*)malloc(sizeof(char)*(timeLen+1));
-    strcpy(this->time, time);
+    char* commandPart;
+    while ((commandPart = strtok(NULL, " ")) != NULL)
+    {
+        char* spaceAdded;
+        if (*this->command == '\0')
+        {
+            spaceAdded = this->command;
+        }
+        else
+        {
+            spaceAdded = stringJoin(this->command, " ");
+            safeFree(this->command);
+        }
 
-    char* cmd = strtok(NULL, " ");
-    int cmdLen = strlen(cmd);
-    this -> cmd = (char*)malloc(sizeof(char)*(cmdLen+1));
-    strcpy(this->cmd, cmd);    
+        char* newJoin = stringJoin(spaceAdded, commandPart);
+        safeFree(spaceAdded);
+
+        this->command = newJoin;
+    }
 }
 
 // Destructor for a process
 void processDestructor(Process* this)
 {
+    safeFree(this->user);
     safeFree(this->tty);
+    safeFree(this->stat);
+    safeFree(this->start);
     safeFree(this->time);
-    safeFree(this->cmd);
+    safeFree(this->command);
 }
 
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
@@ -116,47 +145,85 @@ void freeOutputFromProgram(char** output, int numberLinesRead)
     safeFree(output);
 }
 
-Process* getRunningProcesses(int* processesFound)
+Process** searchRunningProcesses(int* processesFound, const char* processName)
 {
-    int i;
+    int i = 0;
     LogReport report;
-    char** lines = getOutputFromProgram("ps", &i, &report);
+    
+    char* command = stringJoin("ps -u | grep ", processName);
+    char** lines = getOutputFromProgram(command, &i, &report);
+    safeFree(command);
+    
+    /*
+    int foo;
+    printf("\nDEBUG: \n");
+    for (foo = 0; foo < i; ++foo)
+    {
+        printf("%s\n", lines[foo]);
+    }
+    printf("\nEND DEBUG\n");
+    */
 
     if (lines == NULL)
     {
         // LogReport has been filled with some error
         saveLogReport(report);
-        return (Process*)NULL;
+        *processesFound = -1;
+        return (Process**)NULL;
     }
 
-    // i will always be >= 2, one for bash and one for procnanny. so i-1 >= 1 
-    // i-1 because first line is just the heading
-    Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
+    if (i <= 2)
+    {
+        // Nothing's found. 2 because 2 internal processes are started
+        *processesFound = 0;
+        return (Process**)NULL;
+    }
+
+    // i  > 1
+    Process** processes = (Process**)malloc(sizeof(Process*)*(i-2));
     if (!checkMallocResult(processes, &report))
     {
         saveLogReport(report);
-        return (Process*)NULL;
+        freeOutputFromProgram(lines, i);
+        *processesFound = -1;
+        return (Process**)NULL;
     }
 
-    int j;
-    for(j = 1; j < i; ++j)
+    int source;
+    int destination = 0;
+
+    char* command1 = stringJoin("sh -c ps -u | grep ", processName);
+    char* command2 = stringJoin("grep ", processName);
+
+    for (source = 0; source < i; ++source)
     {
-        processConstructor(lines[j], &processes[j-1]);
+        Process* p = (Process*)malloc(sizeof(Process));
+        processConstructor(lines[source], p);
+        if (compareStrings(p->command, command1) || compareStrings(p->command, command2))
+        {
+            processDestructor(p);
+        }
+        else
+        {
+            processes[destination++] = p;
+        }
     }
+
+    safeFree(command1);
+    safeFree(command2);
 
     freeOutputFromProgram(lines, i);
 
-    *processesFound = i-1;
-
+    *processesFound = destination;
     return processes;
 }
 
-void destroyProcessArray(Process* array, int count)
+void destroyProcessArray(Process** array, int count)
 {
     int i;
     for (i = 0; i < count; ++i)
     {
-        processDestructor(&array[i]);
+        processDestructor(array[i]);
     }
     safeFree(array);
 }
