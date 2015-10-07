@@ -166,6 +166,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
     if (i <= 2)
     {
         // Nothing's found. 2 because 2 internal processes are started
+        freeOutputFromProgram(lines, i);
         *processesFound = 0;
         return (Process**)NULL;
     }
