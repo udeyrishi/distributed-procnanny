@@ -1,5 +1,6 @@
 #include "ProcessReader.h"
 #include "Logging.h"
+#include "Utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,10 +41,8 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
 {
     char **lines = (char **)malloc(sizeof(char*)*maxNumberLines);
     
-    if (lines == NULL)
+    if (!checkMallocResult(lines, report))
     {
-        report -> message = "Out of memory.";
-        report -> type = FATAL;
         return (char**)NULL;
     }
 
@@ -61,10 +60,8 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
         int j;
         // Allocate space for the next line
         lines[i] = malloc(maxLineLength);
-        if (lines[i] == NULL)
+        if (!checkMallocResult(lines[i], report))
         {
-            report -> message = "Out of memory.";
-            report -> type = FATAL;
             return (char**)NULL;
         }
 
@@ -107,11 +104,8 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
     // i will always be >= 2, one for bash and one for procnanny. so i-1 >= 1 
     // i-1 because first line is just the heading
     Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
-    
-    if (processes == NULL)
+    if (!checkMallocResult(processes, report))
     {
-        report -> message = "Out of memory.";
-        report -> type = FATAL;
         return (Process*)NULL;
     }
 
@@ -130,3 +124,15 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
 
     return processes;
 }
+
+/*
+char** readFile(const char* filePath, int maxNumberLines, int maxLineLength, int* numberLinesRead, LogReport* report)
+{
+    // filePath size + size of "cat" + 1 for \0.
+    char* buffer = (char*)malloc(sizeof(char)*(strlen(filePath) + 4));
+
+    char** lines = getOutputFromProgram()
+
+    free(buffer);
+}
+*/
