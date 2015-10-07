@@ -7,6 +7,8 @@
 #include <assert.h>
 #include "memwatch.h"
 
+#define STARTING_ALLOCATION_SIZE 128
+
 // Constructor of a Process struct from a processString (output line from the ps command)
 void createProcess(char* processString, Process* this)
 {
@@ -38,9 +40,10 @@ void destroyProcess(Process* this)
 }
 
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
-char** getOutputFromProgram(const char* programName, int maxNumberLines, int maxLineLength, int * numberLinesRead, LogReport* report) 
+char** getOutputFromProgram(const char* programName, int maxLineLength, int * numberLinesRead, LogReport* report) 
 {
-    char **lines = (char **)malloc(sizeof(char*)*maxNumberLines);
+    int currentAllocationSize = STARTING_ALLOCATION_SIZE;
+    char **lines = (char **)malloc(sizeof(char*)*currentAllocationSize);
     
     if (!checkMallocResult(lines, report))
     {
@@ -56,9 +59,22 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     }
 
     int i;
-    for (i = 0; i < maxNumberLines; ++i)
+    for (i = 0; TRUE; ++i)
     {
         int j;
+        if (i >= currentAllocationSize)
+        {
+            int newSize;
+
+            // Double our allocation and re-allocate
+            newSize = currentAllocationSize*2;
+            lines = (char**)realloc(lines, sizeof(char*)*newSize);
+            if (!checkMallocResult(lines, report))
+            {
+                return (char**)NULL;
+            }
+            currentAllocationSize = newSize;
+        }
         // Allocate space for the next line
         lines[i] = malloc(maxLineLength);
         if (!checkMallocResult(lines[i], report))
@@ -101,10 +117,10 @@ void freeOutputFromProgram(char** output, int numberLinesRead)
     free(output);
 }
 
-Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int* processesFound, LogReport* report)
+Process* getRunningProcesses(int maxProcessLength, int* processesFound, LogReport* report)
 {
     int i;
-    char** lines = getOutputFromProgram("ps", maxNumberOfProcesses + 1, maxProcessLength, &i, report);
+    char** lines = getOutputFromProgram("ps", maxProcessLength, &i, report);
 
     if (lines == NULL)
     {
@@ -144,7 +160,7 @@ void destroyProcessArray(Process* array, int count)
     free(array);
 }
 
-char** readFile(const char* filePath, int maxNumberLines, int maxLineLength, int* numberLinesRead, LogReport* report)
+char** readFile(const char* filePath, int maxLineLength, int* numberLinesRead, LogReport* report)
 {
     // filePath size + size of "cat " + 1 for \0.
     int sizeBuffer = strlen(filePath) + 5;
@@ -160,7 +176,7 @@ char** readFile(const char* filePath, int maxNumberLines, int maxLineLength, int
     // Check: incorrect estimation of bufferSize in ProcessReader.readFile
     assert(n + 1 == sizeBuffer);
 
-    char** lines = getOutputFromProgram(catCall, maxNumberLines, maxLineLength, numberLinesRead, report);
+    char** lines = getOutputFromProgram(catCall, maxLineLength, numberLinesRead, report);
     free(catCall);
     return lines;
 }
