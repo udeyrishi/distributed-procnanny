@@ -104,6 +104,7 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
         return (Process*)NULL;
     }
 
+    // i will always be >= 2, one for bash and one for procnanny. so i-1 >= 1 
     // i-1 because first line is just the heading
     Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
     
