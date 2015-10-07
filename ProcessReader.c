@@ -68,6 +68,7 @@ void processDestructor(Process* this)
     safeFree(this->start);
     safeFree(this->time);
     safeFree(this->command);
+    safeFree(this);
 }
 
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array

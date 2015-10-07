@@ -27,6 +27,7 @@ void killOtherProcNannys()
         exit(-1);
     }
 
+
     int i;
     for(i = 0; i < num; ++i)
     {
@@ -48,6 +49,7 @@ void killOtherProcNannys()
             }
         }
     }
+
 
     destroyProcessArray(procs, num);
 }
