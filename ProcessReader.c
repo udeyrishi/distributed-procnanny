@@ -1,6 +1,8 @@
 #include "ProcessReader.h"
 #include "Logging.h"
 #include "Utils.h"
+#include <sys/types.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +15,7 @@
 void processConstructor(char* processString, Process* this)
 {
     int pid = atoi(strtok(processString, " "));
-    this -> pid = pid;
+    this -> pid = (pid_t)pid;
 
     char* tty = strtok(NULL, " ");
     int ttyLen = strlen(tty);
@@ -159,22 +161,11 @@ void destroyProcessArray(Process* array, int count)
     safeFree(array);
 }
 
+// private
+
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
 {
-    // filePath size + size of "cat " + 1 for \0.
-    int sizeBuffer = strlen(filePath) + 5;
-
-    char* catCall = (char*)malloc(sizeof(char)*sizeBuffer);
-    if (!checkMallocResult(catCall, report))
-    {
-        return (char**)NULL;
-    }
-
-    int n = sprintf(catCall, "cat %s", filePath);
-
-    // Check: incorrect estimation of bufferSize in ProcessReader.readFile
-    assert(n + 1 == sizeBuffer);
-
+    char* catCall = stringJoin("cat ", filePath);
     char** lines = getOutputFromProgram(catCall, numberLinesRead, report);
     safeFree(catCall);
     return lines;
@@ -218,4 +209,9 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
 
     *configOutput = config;
     return configLines;
+}
+
+int killProcess(Process process)
+{
+    return kill(process.pid, SIGKILL);
 }
