@@ -33,7 +33,7 @@ void destroyProcess(Process* this)
     free(this->cmd);
 }
 
-// Source: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
+// Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
 char** getOutputFromProgram(const char* programName, int maxNumberLines, int maxLineLength, int * numberLinesRead, LogReport* report) 
 {
     /* Allocate lines of text */
@@ -55,7 +55,7 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     }
 
     int i;
-    for (i = 0; i < maxNumberLines; i++)
+    for (i = 0; i < maxNumberLines; ++i)
     {
         int j;
         // Allocate space for the next line
@@ -69,6 +69,7 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
 
         if (fgets(words[i], maxLineLength - 1, fp) == NULL)
         {
+            free(words[i]);
             break;
         }
 
@@ -79,10 +80,11 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     }
     
     // Close file
-    if (fclose(fp) != 0) 
+    if (pclose(fp) != 0) 
     {
         report -> message = "Failed to close the program stream.";
         report -> type = ERROR;
+        return (char**)NULL;
     }
 
     *numberLinesRead = i;
@@ -97,6 +99,7 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
 
     if (words == NULL)
     {
+        // LogReport has been filled with some error
         return (Process*)NULL;
     }
 

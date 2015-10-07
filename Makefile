@@ -3,3 +3,4 @@ all: *.c
 
 clean:
 	$(RM) procnanny
+	$(RM) memwatch.log
