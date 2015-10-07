@@ -5,8 +5,6 @@
 #include <sys/wait.h>
 #include "memwatch.h"
 
-
-
 int main(int argc, char** argv)
 {
     char** config = NULL;
@@ -16,29 +14,16 @@ int main(int argc, char** argv)
         return -1;
     }
     int duration = atoi(config[0]);
-
-    freeOutputFromProgram(config, configLength);
-
-/*
-	int i;
-    LogReport report;
-    report.message = NULL;
-    Process* processes = getRunningProcesses(MAX_PROCESSES, MAX_PROCESS_LINE_LENGTH, &i, &report);
-
-    if (report.message != NULL)
+    printf("%d\n", duration);
+	int numberProcesses;
+    Process* processes = getRunningProcesses(&numberProcesses);
+    if (processes == NULL)
     {
-        saveLogReport(report);
         return -1;
     }
 
-    int j;
-    for(j = 0; j < i; ++j)
-    {
-        Process this = processes[j];
-        printf("PID: %d, TTY: %s, TIME: %s, CMD: %s\n", this.pid, this.tty, this.time, this.cmd);
-    }
+    freeOutputFromProgram(config, configLength);
+    destroyProcessArray(processes, numberProcesses);
 
-    destroyProcessArray(processes, i);
-*/
     return 0;
 }

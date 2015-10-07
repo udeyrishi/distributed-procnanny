@@ -114,25 +114,27 @@ void freeOutputFromProgram(char** output, int numberLinesRead)
     safeFree(output);
 }
 
-Process* getRunningProcesses(int* processesFound, LogReport* report)
+Process* getRunningProcesses(int* processesFound)
 {
     int i;
-    char** lines = getOutputFromProgram("ps", &i, report);
+    LogReport report;
+    char** lines = getOutputFromProgram("ps", &i, &report);
 
     if (lines == NULL)
     {
         // LogReport has been filled with some error
+        saveLogReport(report);
         return (Process*)NULL;
     }
 
     // i will always be >= 2, one for bash and one for procnanny. so i-1 >= 1 
     // i-1 because first line is just the heading
     Process* processes = (Process*)malloc(sizeof(Process)*(i-1));
-    if (!checkMallocResult(processes, report))
+    if (!checkMallocResult(processes, &report))
     {
+        saveLogReport(report);
         return (Process*)NULL;
     }
-
 
     int j;
     for(j = 1; j < i; ++j)

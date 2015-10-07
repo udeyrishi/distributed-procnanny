@@ -13,7 +13,7 @@ typedef struct
 
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
 void freeOutputFromProgram(char** output, int numberLinesRead); 
-Process* getRunningProcesses(int* processesFound, LogReport* report);
+Process* getRunningProcesses(int* processesFound);
 void destroyProcessArray(Process* array, int count);
 void processConstructor(char* processString, Process* this);
 void processDestructor(Process* this);
