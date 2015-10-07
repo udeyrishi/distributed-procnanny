@@ -10,7 +10,7 @@
 #define STARTING_ALLOCATION_SIZE 128
 
 // Constructor of a Process struct from a processString (output line from the ps command)
-void createProcess(char* processString, Process* this)
+void processConstructor(char* processString, Process* this)
 {
     int pid = atoi(strtok(processString, " "));
     this -> pid = pid;
@@ -32,7 +32,7 @@ void createProcess(char* processString, Process* this)
 }
 
 // Destructor for a process
-void destroyProcess(Process* this)
+void processDestructor(Process* this)
 {
     safeFree(this->tty);
     safeFree(this->time);
@@ -137,7 +137,7 @@ Process* getRunningProcesses(int* processesFound, LogReport* report)
     int j;
     for(j = 1; j < i; ++j)
     {
-        createProcess(lines[j], &processes[j-1]);
+        processConstructor(lines[j], &processes[j-1]);
     }
 
     freeOutputFromProgram(lines, i);
@@ -152,7 +152,7 @@ void destroyProcessArray(Process* array, int count)
     int i;
     for (i = 0; i < count; ++i)
     {
-        destroyProcess(&array[i]);
+        processDestructor(&array[i]);
     }
     safeFree(array);
 }
@@ -176,4 +176,44 @@ char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
     char** lines = getOutputFromProgram(catCall, numberLinesRead, report);
     safeFree(catCall);
     return lines;
+}
+
+int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
+{
+    LogReport report;
+    report.message = (char*)NULL;
+
+    if (argc < 2)
+    {
+        report.message = "Config file path needed as argument";
+        report.type = FATAL;
+        saveLogReport(report);
+        return -1;
+    }
+
+    char* configPath = argv[1];
+    int configLines = 0;
+    char** config = readFile(configPath, &configLines, &report);
+    
+    if (report.message != NULL)
+    {
+        if (configLines > 0)
+        {
+            freeOutputFromProgram(config, configLines);
+        }
+        saveLogReport(report);
+        return -1;
+    }
+
+    if (configLines < 2)
+    {
+        freeOutputFromProgram(config, configLines);
+        report.message = "Bad config file. Number of lines should be greater than 1.";
+        report.type = FATAL;
+        saveLogReport(report);
+        return -1;
+    }
+
+    *configOutput = config;
+    return configLines;
 }

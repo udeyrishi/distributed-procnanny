@@ -5,52 +5,19 @@
 #include <sys/wait.h>
 #include "memwatch.h"
 
+
+
 int main(int argc, char** argv)
 {
-    
-    LogReport report;
-    report.message = (char*)NULL;
-
-    if (argc < 2)
+    char** config = NULL;
+    int configLength = getProcessesToMonitor(argc, argv, &config);
+    if (configLength == -1)
     {
-        report.message = "Config file path needed as argument";
-        report.type = FATAL;
-        saveLogReport(report);
         return -1;
     }
-
-    char* configPath = argv[1];
-    int configLines = 0;
-    char** config = readFile(configPath, &configLines, &report);
-    
-    if (report.message != NULL)
-    {
-        if (configLines > 0)
-        {
-            freeOutputFromProgram(config, configLines);
-        }
-        saveLogReport(report);
-        return -1;
-    }
-
-    if (configLines < 2)
-    {
-        freeOutputFromProgram(config, configLines);
-        report.message = "Bad config file. Number of lines should be greater than 1.";
-        report.type = FATAL;
-        saveLogReport(report);
-        return -1;
-    }
-
     int duration = atoi(config[0]);
-    printf("%d\n", duration);
-    int i;
-    for (i = 1; i < configLines; ++i)
-    {
-        printf("%d: %s\n", i, config[i]);
-    }
 
-    freeOutputFromProgram(config, configLines);
+    freeOutputFromProgram(config, configLength);
 
 /*
 	int i;

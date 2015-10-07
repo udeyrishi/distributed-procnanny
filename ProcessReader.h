@@ -15,8 +15,9 @@ char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogR
 void freeOutputFromProgram(char** output, int numberLinesRead); 
 Process* getRunningProcesses(int* processesFound, LogReport* report);
 void destroyProcessArray(Process* array, int count);
-void createProcess(char* processString, Process* this);
-void destroyProcess(Process* this);
+void processConstructor(char* processString, Process* this);
+void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
+int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 
 #endif
