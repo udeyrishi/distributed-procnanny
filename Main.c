@@ -11,6 +11,7 @@
 
 int main(int argc, char** argv)
 {
+    
     LogReport report;
     report.message = (char*)NULL;
 
@@ -72,12 +73,9 @@ int main(int argc, char** argv)
     {
         Process this = processes[j];
         printf("PID: %d, TTY: %s, TIME: %s, CMD: %s\n", this.pid, this.tty, this.time, this.cmd);
-        destroyProcess(&this);
     }
 
-    free(processes);
+    destroyProcessArray(processes, i);
 */
-    
-
     return 0;
 }

@@ -134,6 +134,15 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
     return processes;
 }
 
+void destroyProcessArray(Process* array, int count)
+{
+    int i;
+    for (i = 0; i < count; ++i)
+    {
+        destroyProcess(&array[i]);
+    }
+    free(array);
+}
 
 char** readFile(const char* filePath, int maxNumberLines, int maxLineLength, int* numberLinesRead, LogReport* report)
 {
