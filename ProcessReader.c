@@ -34,13 +34,13 @@ void createProcess(char* processString, Process* this)
 // Destructor for a process
 void destroyProcess(Process* this)
 {
-    free(this->tty);
-    free(this->time);
-    free(this->cmd);
+    safeFree(this->tty);
+    safeFree(this->time);
+    safeFree(this->cmd);
 }
 
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
-char** getOutputFromProgram(const char* programName, int maxLineLength, int * numberLinesRead, LogReport* report) 
+char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report) 
 {
     int currentAllocationSize = STARTING_ALLOCATION_SIZE;
     char **lines = (char **)malloc(sizeof(char*)*currentAllocationSize);
@@ -75,19 +75,14 @@ char** getOutputFromProgram(const char* programName, int maxLineLength, int * nu
             }
             currentAllocationSize = newSize;
         }
-        // Allocate space for the next line
-        lines[i] = malloc(maxLineLength);
-        if (!checkMallocResult(lines[i], report))
-        {
-            return (char**)NULL;
-        }
 
-        if (fgets(lines[i], maxLineLength - 1, fp) == NULL)
+        lines[i] = (char*)NULL;
+        size_t zeroSize = 0;
+        if (getline(&lines[i], &zeroSize, fp) == -1)
         {
-            free(lines[i]);
             break;
         }
-
+        
         // Get rid of CR or LF at end of line
         for (j = strlen(lines[i])-1; j >= 0 && (lines[i][j] == '\n' || lines[i][j] == '\r'); j--);
 
@@ -111,16 +106,18 @@ void freeOutputFromProgram(char** output, int numberLinesRead)
 {
     int i;
     for (i = 0; i < numberLinesRead; ++i)
-    {   
-        free(output[i]);
+    {
+        //getOutputFromProgram uses getline. Causes WILD free warning with memwatch if freed regularly   
+        // Source: http://webdocs.cs.ualberta.ca/~paullu/C379/memwatch-2.71/FAQ
+        safeMwFree(output[i]);
     }
-    free(output);
+    safeFree(output);
 }
 
-Process* getRunningProcesses(int maxProcessLength, int* processesFound, LogReport* report)
+Process* getRunningProcesses(int* processesFound, LogReport* report)
 {
     int i;
-    char** lines = getOutputFromProgram("ps", maxProcessLength, &i, report);
+    char** lines = getOutputFromProgram("ps", &i, report);
 
     if (lines == NULL)
     {
@@ -157,10 +154,10 @@ void destroyProcessArray(Process* array, int count)
     {
         destroyProcess(&array[i]);
     }
-    free(array);
+    safeFree(array);
 }
 
-char** readFile(const char* filePath, int maxLineLength, int* numberLinesRead, LogReport* report)
+char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
 {
     // filePath size + size of "cat " + 1 for \0.
     int sizeBuffer = strlen(filePath) + 5;
@@ -176,7 +173,7 @@ char** readFile(const char* filePath, int maxLineLength, int* numberLinesRead, L
     // Check: incorrect estimation of bufferSize in ProcessReader.readFile
     assert(n + 1 == sizeBuffer);
 
-    char** lines = getOutputFromProgram(catCall, maxLineLength, numberLinesRead, report);
-    free(catCall);
+    char** lines = getOutputFromProgram(catCall, numberLinesRead, report);
+    safeFree(catCall);
     return lines;
 }

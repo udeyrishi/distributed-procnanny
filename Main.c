@@ -5,9 +5,6 @@
 #include <sys/wait.h>
 #include "memwatch.h"
 
-#define MAX_PROCESS_LINE_LENGTH 200
-
-
 int main(int argc, char** argv)
 {
     
@@ -24,7 +21,7 @@ int main(int argc, char** argv)
 
     char* configPath = argv[1];
     int configLines = 0;
-    char** config = readFile(configPath, MAX_PROCESS_LINE_LENGTH, &configLines, &report);
+    char** config = readFile(configPath, &configLines, &report);
     
     if (report.message != NULL)
     {

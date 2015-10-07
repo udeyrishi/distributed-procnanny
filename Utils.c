@@ -12,3 +12,15 @@ Boolean checkMallocResult(void* pointer, LogReport* report)
     }
     return TRUE;
 }
+
+void safeFree(void* pointer)
+{
+	free(pointer);
+	pointer = NULL;
+}
+
+void safeMwFree(void* pointer)
+{
+	mwFree_(pointer);
+	pointer = NULL;
+}

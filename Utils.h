@@ -9,5 +9,6 @@
 typedef int Boolean;
 
 Boolean checkMallocResult(void* pointer, LogReport* report);
-
+void safeFree(void* pointer);
+void safeMwFree(void* pointer);
 #endif
