@@ -5,6 +5,7 @@
 #include <string.h>
 #include "memwatch.h"
 
+// Constructor of a Process struct from a processString (output line from the ps command)
 void createProcess(char* processString, Process* this)
 {
     int pid = atoi(strtok(processString, " "));
@@ -12,20 +13,21 @@ void createProcess(char* processString, Process* this)
 
     char* tty = strtok(NULL, " ");
     int ttyLen = strlen(tty);
-    this -> tty = (char*)malloc(sizeof(char)*ttyLen);
+    this -> tty = (char*)malloc(sizeof(char)*(ttyLen+1));
     strcpy(this->tty, tty);
 
     char* time = strtok(NULL, " ");
     int timeLen = strlen(time);
-    this -> time = (char*)malloc(sizeof(char)*timeLen);
+    this -> time = (char*)malloc(sizeof(char)*(timeLen+1));
     strcpy(this->time, time);
 
     char* cmd = strtok(NULL, " ");
     int cmdLen = strlen(cmd);
-    this -> cmd = (char*)malloc(sizeof(char)*cmdLen);
+    this -> cmd = (char*)malloc(sizeof(char)*(cmdLen+1));
     strcpy(this->cmd, cmd);    
 }
 
+// Destructor for a process
 void destroyProcess(Process* this)
 {
     free(this->tty);
@@ -36,10 +38,9 @@ void destroyProcess(Process* this)
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
 char** getOutputFromProgram(const char* programName, int maxNumberLines, int maxLineLength, int * numberLinesRead, LogReport* report) 
 {
-    /* Allocate lines of text */
-    char **words = (char **)malloc(sizeof(char*)*maxNumberLines);
+    char **lines = (char **)malloc(sizeof(char*)*maxNumberLines);
     
-    if (words == NULL)
+    if (lines == NULL)
     {
         report -> message = "Out of memory.";
         report -> type = FATAL;
@@ -59,24 +60,24 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     {
         int j;
         // Allocate space for the next line
-        words[i] = malloc(maxLineLength);
-        if (words[i] == NULL)
+        lines[i] = malloc(maxLineLength);
+        if (lines[i] == NULL)
         {
             report -> message = "Out of memory.";
             report -> type = FATAL;
             return (char**)NULL;
         }
 
-        if (fgets(words[i], maxLineLength - 1, fp) == NULL)
+        if (fgets(lines[i], maxLineLength - 1, fp) == NULL)
         {
-            free(words[i]);
+            free(lines[i]);
             break;
         }
 
         // Get rid of CR or LF at end of line
-        for (j = strlen(words[i])-1; j >= 0 && (words[i][j] == '\n' || words[i][j] == '\r'); j--);
+        for (j = strlen(lines[i])-1; j >= 0 && (lines[i][j] == '\n' || lines[i][j] == '\r'); j--);
 
-        words[i][j+1] = '\0';
+        lines[i][j+1] = '\0';
     }
     
     // Close file
@@ -89,15 +90,15 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
 
     *numberLinesRead = i;
 
-    return words;
+    return lines;
 }
 
 Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int* processesFound, LogReport* report)
 {
     int i;
-    char** words = getOutputFromProgram("ps", maxNumberOfProcesses, maxProcessLength, &i, report);
+    char** lines = getOutputFromProgram("ps", maxNumberOfProcesses, maxProcessLength, &i, report);
 
-    if (words == NULL)
+    if (lines == NULL)
     {
         // LogReport has been filled with some error
         return (Process*)NULL;
@@ -113,16 +114,16 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
         return (Process*)NULL;
     }
 
+    free(lines[0]);
+
     int j;
     for(j = 1; j < i; ++j)
     {
-        createProcess(words[j], &processes[j-1]);
+        createProcess(lines[j], &processes[j-1]);
+        free(lines[j]);
     }
 
-    for (j = 0; j < i; ++j)
-    {
-        free(words[i]);
-    }
+    free(lines);
 
     *processesFound = i-1;
 

@@ -22,5 +22,7 @@ int main(void)
         destroyProcess(&this);
     }
 
+    free(processes);
+
     return 0;
 }
