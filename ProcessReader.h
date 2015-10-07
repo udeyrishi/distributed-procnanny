@@ -22,7 +22,6 @@ typedef struct
 
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
 void freeOutputFromProgram(char** output, int numberLinesRead); 
-//Process* getRunningProcesses(int* processesFound);
 Process** searchRunningProcesses(int* processesFound, const char* processName);
 void destroyProcessArray(Process** array, int count);
 void processConstructor(char* processString, Process* this);

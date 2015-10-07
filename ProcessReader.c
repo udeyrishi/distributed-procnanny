@@ -155,16 +155,6 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
     char** lines = getOutputFromProgram(command, &i, &report);
     safeFree(command);
     
-    /*
-    int foo;
-    printf("\nDEBUG: \n");
-    for (foo = 0; foo < i; ++foo)
-    {
-        printf("%s\n", lines[foo]);
-    }
-    printf("\nEND DEBUG\n");
-    */
-
     if (lines == NULL)
     {
         // LogReport has been filled with some error
@@ -180,7 +170,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
         return (Process**)NULL;
     }
 
-    // i  > 1
+    // i  > 2
     Process** processes = (Process**)malloc(sizeof(Process*)*(i-2));
     if (!checkMallocResult(processes, &report))
     {
@@ -228,8 +218,6 @@ void destroyProcessArray(Process** array, int count)
     }
     safeFree(array);
 }
-
-// private
 
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
 {
