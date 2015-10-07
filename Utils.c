@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <stdlib.h>
+#include "memwatch.h"
 
 Boolean checkMallocResult(void* pointer, LogReport* report)
 {
