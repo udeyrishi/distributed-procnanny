@@ -57,3 +57,17 @@ char* stringJoin(const char* first, const char* second)
     safeFree(temp);
     return joined;
 }
+
+char* stringNumberJoin(const char* first, int second)
+{
+	char str[15]; // good enough
+    sprintf(str, "%d", second);
+    return stringJoin(first, str);
+}
+
+char* numberStrngJoin(int first, const char* second)
+{
+	char str[15]; // good enough
+    sprintf(str, "%d", first);
+    return stringJoin(str, second);
+}

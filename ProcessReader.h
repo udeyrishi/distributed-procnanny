@@ -2,6 +2,7 @@
 #define __PROC_READER__
 
 #include "Logging.h"
+#include "Utils.h"
 #include <sys/types.h>
 
 typedef struct 
@@ -20,5 +21,5 @@ void processConstructor(char* processString, Process* this);
 void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
-void killProcess(Process process);
+Boolean killProcess(Process process);
 #endif

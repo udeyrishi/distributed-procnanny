@@ -12,4 +12,6 @@ Boolean checkMallocResult(void* pointer, LogReport* report);
 void safeFree(void* pointer);
 void safeMwFree(void* pointer);
 char* stringJoin(const char* first, const char* second);
+char* stringNumberJoin(const char* first, int second);
+char* numberStrngJoin(int first, const char* second);
 #endif

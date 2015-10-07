@@ -14,7 +14,7 @@ const char* PROGRAM_NAME = "procnanny";
 
 void killOtherProcNannys()
 {
-    int num;
+    int num = 0;
     Process* procs = getRunningProcesses(&num);
     if (procs == NULL)
     {
@@ -28,13 +28,17 @@ void killOtherProcNannys()
         if (strcmp(p.cmd, PROGRAM_NAME) == 0 && getpid() != p.pid)
         {
             LogReport report;
-            char str[15]; // good enough
-            sprintf(str, "%d", p.pid);
-            report.message = stringJoin("Another procnanny found. Killing it. PID: ", str);
+            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p.pid);
             report.type = NORMAL;
             saveLogReport(report);
             safeFree(report.message);
-            killProcess(p);
+            if(!killProcess(p))
+            {
+                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p.pid);
+                report.type = ERROR;
+                saveLogReport(report);
+                safeFree(report.message);
+            }
         }
     }
 

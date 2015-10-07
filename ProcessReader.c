@@ -211,7 +211,15 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
     return configLines;
 }
 
-int killProcess(Process process)
+Boolean killProcess(Process process)
 {
-    return kill(process.pid, SIGKILL);
+    int result = kill(process.pid, SIGKILL);
+    if (result == 0)
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
 }
