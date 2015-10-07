@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "memwatch.h"
 
 // Constructor of a Process struct from a processString (output line from the ps command)
@@ -90,10 +91,20 @@ char** getOutputFromProgram(const char* programName, int maxNumberLines, int max
     return lines;
 }
 
+void freeOutputFromProgram(char** output, int numberLinesRead)
+{
+    int i;
+    for (i = 0; i < numberLinesRead; ++i)
+    {   
+        free(output[i]);
+    }
+    free(output);
+}
+
 Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int* processesFound, LogReport* report)
 {
     int i;
-    char** lines = getOutputFromProgram("ps", maxNumberOfProcesses, maxProcessLength, &i, report);
+    char** lines = getOutputFromProgram("ps", maxNumberOfProcesses + 1, maxProcessLength, &i, report);
 
     if (lines == NULL)
     {
@@ -109,30 +120,38 @@ Process* getRunningProcesses(int maxNumberOfProcesses, int maxProcessLength, int
         return (Process*)NULL;
     }
 
-    free(lines[0]);
 
     int j;
     for(j = 1; j < i; ++j)
     {
         createProcess(lines[j], &processes[j-1]);
-        free(lines[j]);
     }
 
-    free(lines);
+    freeOutputFromProgram(lines, i);
 
     *processesFound = i-1;
 
     return processes;
 }
 
-/*
+
 char** readFile(const char* filePath, int maxNumberLines, int maxLineLength, int* numberLinesRead, LogReport* report)
 {
-    // filePath size + size of "cat" + 1 for \0.
-    char* buffer = (char*)malloc(sizeof(char)*(strlen(filePath) + 4));
+    // filePath size + size of "cat " + 1 for \0.
+    int sizeBuffer = strlen(filePath) + 5;
 
-    char** lines = getOutputFromProgram()
+    char* catCall = (char*)malloc(sizeof(char)*sizeBuffer);
+    if (!checkMallocResult(catCall, report))
+    {
+        return (char**)NULL;
+    }
 
-    free(buffer);
+    int n = sprintf(catCall, "cat %s", filePath);
+
+    // Check: incorrect estimation of bufferSize in ProcessReader.readFile
+    assert(n + 1 == sizeBuffer);
+
+    char** lines = getOutputFromProgram(catCall, maxNumberLines, maxLineLength, numberLinesRead, report);
+    free(catCall);
+    return lines;
 }
-*/
