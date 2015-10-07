@@ -12,7 +12,14 @@ int main(void)
 {
 	int i;
     LogReport report;
+    report.message = NULL;
     Process* processes = getRunningProcesses(MAX_PROCESSES, MAX_PROCESS_LINE_LENGTH, &i, &report);
+
+    if (report.message != NULL)
+    {
+        saveLogReport(report);
+        return -1;
+    }
 
     int j;
     for(j = 0; j < i; ++j)
