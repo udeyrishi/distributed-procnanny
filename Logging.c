@@ -5,6 +5,8 @@
 #include <string.h>
 #include "memwatch.h"
 
+const char* logFilePath = "./procnanny.log";
+
 // private
 char* getTime()
 {
@@ -55,10 +57,27 @@ char* getFormattedReport(LogReport report)
     return output2;
 }
 
+bool appendToFile(const char* path, char* string)
+{
+    FILE *f = fopen(path, "a+");
+    if (f == NULL)
+    {
+        LogReport report;
+        report.message = "Failed to open log file.";
+        report.type = ERROR;
+        printLogReport(report);
+        return false;
+    }
+
+    fprintf(f, "%s\n", string);
+    fclose(f);
+    return true;
+}
+
 void saveLogReport(LogReport report)
 {
     char* output = getFormattedReport(report);
-    printf("%s\n", output);
+    appendToFile(logFilePath, output);
     free(output);
 }
 

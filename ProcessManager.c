@@ -468,7 +468,6 @@ void destructChain(RegisterEntry* root)
     }
 }
 
-// Assumes same monitoring won't be called 2x. TODO: fix this
 Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg)
 {
     while (reg != NULL)
