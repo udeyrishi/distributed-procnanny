@@ -1,4 +1,5 @@
 #include "ProcessReader.h"
+#include "ProcNannyRegister.h"
 #include "Logging.h"
 #include "Utils.h"
 #include <sys/types.h>
@@ -322,7 +323,7 @@ bool killOtherProcNannys()
     return true;
 }
 
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode)
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer)
 {
     int num = 0;
     Process** procs = searchRunningProcesses(&num, processName);
@@ -338,6 +339,7 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
     int i;
     
+    // Start with current pid
     pid_t pid = getpid();
     
     for(i = 0; i < num; ++i)
@@ -357,7 +359,8 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
         logProcessMonitoringInit(processName, p->pid);
 
-        pid = p -> pid;
+        RegisterEntry* newEntry;
+        //pid = p -> pid;
         switch (pid = fork())
         {
             case CHILD:
@@ -409,6 +412,9 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
             default:
                 // parent
+                newEntry = constuctorRegisterEntry(pid, p, NULL);
+                assert(tailPointer-> next == NULL);
+                tailPointer->next = newEntry;
                 break;
         }
     }

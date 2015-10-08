@@ -28,6 +28,13 @@ typedef struct
 	char* command;
 } Process;
 
+typedef struct registerEntry
+{
+	pid_t monitoringProcess;
+	Process* monitoredProcess;
+	struct registerEntry* next;
+} RegisterEntry;
+
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
 void freeOutputFromProgram(char** output, int numberLinesRead); 
 Process** searchRunningProcesses(int* processesFound, const char* processName);
@@ -38,5 +45,5 @@ char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 bool killProcess(Process process);
 bool killOtherProcNannys();
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode);
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer);
 #endif

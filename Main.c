@@ -1,6 +1,7 @@
 #include "Logging.h"
 #include "ProcessReader.h"
 #include "Utils.h"
+#include "ProcNannyRegister.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,19 +28,27 @@ int main(int argc, char** argv)
     ProcessStatusCode status;
     bool isChild = false;
 
+    RegisterEntry* root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
+    RegisterEntry* tail = root;
+
     for (i = 1; i < configLength; ++i)
     {
         char* processName = config[i];
         status = (ProcessStatusCode)-99; // Invalid code for initial value
         
-        if (monitor(processName, duration, &status) == CHILD)
+        if (monitor(processName, duration, &status, tail) == CHILD)
         {
             isChild = true;
             break;
         }
         else if ((int)status == -99)
         {
-            continue;
+            // Normal parent execution
+            while(tail->next != NULL)
+            {
+                // Refresh tail
+                tail = tail->next;
+            }
         }
         else if (status == NOT_FOUND)
         {
@@ -63,6 +72,7 @@ int main(int argc, char** argv)
     
     if (isChild)
     {
+        destructChain(root);
         return (int)status;
     }
     else
@@ -73,27 +83,28 @@ int main(int argc, char** argv)
         int killCount = 0;
         while((pid = wait(&status)) != -1)
         {
-            // TODO : proper logging
+            Process* killedProcess = findAndRemoveMonitoredProcess(pid, root);
             if (status == 0)
             {
                 ++killCount;
-                logProcessKill(pid, " ", duration);
+                logProcessKill(killedProcess->pid, killedProcess->command, duration);
             }
             else if (status < 0)
             {
                 LogReport report;
-                report.message = stringNumberJoin("Failed to kill process with PID: ", (int)pid);
+                report.message = stringNumberJoin("Failed to kill process with PID: ", (int)killedProcess->pid);
                 report.type = ERROR;
                 saveLogReport(report);
                 free(report.message);
             }
             else
             {
-                logSelfDying(pid, " ", duration);
+                logSelfDying(killedProcess->pid, " ", duration);
             }
         }
 
         logFinalReport(killCount);
+        destructChain(root);
         return 0;
     }
 }
