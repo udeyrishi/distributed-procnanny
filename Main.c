@@ -77,13 +77,12 @@ int main(int argc, char** argv)
     }
     else
     {
-        // FIX: this pid is the child's pid
         int status = 0;
         pid_t pid;
         int killCount = 0;
         while((pid = wait(&status)) != -1)
         {
-            Process* killedProcess = findAndRemoveMonitoredProcess(pid, root);
+            Process* killedProcess = findMonitoredProcess(pid, root);
             if (status == 0)
             {
                 ++killCount;
@@ -99,8 +98,9 @@ int main(int argc, char** argv)
             }
             else
             {
-                logSelfDying(killedProcess->pid, " ", duration);
+                logSelfDying(killedProcess->pid, killedProcess->command, duration);
             }
+            free(killedProcess);
         }
 
         logFinalReport(killCount);

@@ -8,6 +8,6 @@ RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitor
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);
 void destructChain(RegisterEntry* root);
 // TODO: Maybe a HashMap if time permits?
-Process* findAndRemoveMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg);
+Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg);
 
 #endif

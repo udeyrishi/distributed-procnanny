@@ -31,7 +31,8 @@ typedef struct
 typedef struct registerEntry
 {
 	pid_t monitoringProcess;
-	Process* monitoredProcess;
+	pid_t monitoredProcess;
+	char* monitoredName;
 	struct registerEntry* next;
 } RegisterEntry;
 
@@ -41,7 +42,6 @@ Process** searchRunningProcesses(int* processesFound, const char* processName);
 void destroyProcessArray(Process** array, int count);
 void processConstructor(char* processString, Process* this);
 void processDestructor(Process* this);
-void copyProcess(Process* destination, Process* source);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 bool killProcess(Process process);
