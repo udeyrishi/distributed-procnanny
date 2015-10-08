@@ -5,7 +5,7 @@
 #include <string.h>
 #include "memwatch.h"
 
-const char* logFilePath = "./procnanny.log";
+const char* logFileEnvVar = "PROCNANNYLOGS";
 
 // private
 char* getTime()
@@ -77,7 +77,19 @@ bool appendToFile(const char* path, char* string)
 void saveLogReport(LogReport report)
 {
     char* output = getFormattedReport(report);
-    appendToFile(logFilePath, output);
+    const char* logFile = getenv(logFileEnvVar);
+    if (logFile == NULL)
+    {
+        LogReport report;
+        report.message = stringJoin("Environment variable not found: ", logFileEnvVar);
+        report.type = ERROR;
+        printLogReport(report);
+        free(report.message);
+    }
+    else
+    {
+        appendToFile(logFile, output);
+    }
     free(output);
 }
 
