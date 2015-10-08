@@ -37,6 +37,6 @@ void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 bool killProcess(Process process);
-void killOtherProcNannys();
+bool killOtherProcNannys();
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode);
 #endif

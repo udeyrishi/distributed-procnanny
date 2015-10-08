@@ -9,33 +9,53 @@
 
 int main(int argc, char** argv)
 {
-    killOtherProcNannys();
+    if (!killOtherProcNannys())
+    {
+        exit(-1);
+    }
     
     char** config = NULL;
     int configLength = getProcessesToMonitor(argc, argv, &config);
     if (configLength == -1)
     {
+        // Already logged
         return -1;
     }
     unsigned long int duration = strtoul(config[0], NULL, 10);
 
     int i;
-    ProcessStatusCode status = (ProcessStatusCode)-99; // Invalid
+    ProcessStatusCode status;
     bool isChild = false;
 
     for (i = 1; i < configLength; ++i)
     {
         char* processName = config[i];
-
+        status = (ProcessStatusCode)-99; // Invalid code for initial value
+        
         if (monitor(processName, duration, &status) == CHILD)
         {
             isChild = true;
             break;
         }
-        else if ((int)status != -99)
+        else if ((int)status == -99)
         {
-            // TODO better NOT_FOUND and FAILED logging.
-            printf("Parent returned status %d when trying to set up a child monitor process.\n", (int)status);
+            continue;
+        }
+        else if (status == NOT_FOUND)
+        {
+            LogReport report;
+            report.message = stringJoin("No process found with name: ", processName);
+            report.type = INFO;
+            saveLogReport(report);
+            free(report.message);
+        }
+        else
+        {
+            LogReport report;
+            report.message = stringNumberJoin("Parent process returned unexpected status code while setting up a child process: ", (int)status);
+            report.type = DEBUG;
+            saveLogReport(report);
+            free(report.message);
         }
     }
 
@@ -50,22 +70,41 @@ int main(int argc, char** argv)
         // FIX: this pid is the child's pid
         int status = 0;
         pid_t pid;
+        int killCount = 0;
         while((pid = wait(&status)) != -1)
         {
             // TODO : proper logging
             if (status == 0)
             {
-                printf("Killed proc. pid: %d.\n", (int)pid);
+                ++killCount;
+                LogReport report;
+                report.message = stringNumberJoin("PID killed: ", pid);
+                report.type = ACTION;
+                saveLogReport(report);
+                free(report.message);
+                // TODO: Format:
+                //Action: PID 332 (a.out) killed after exceeding 120 seconds.
             }
             else if (status < 0)
             {
-                printf("Failed to kill proc. pid: %d.\n", (int)pid);
+                LogReport report;
+                report.message = stringNumberJoin("Failed to kill process with PID: ", (int)pid);
+                report.type = ERROR;
+                saveLogReport(report);
+                free(report.message);
             }
             else
             {
-                printf("Process died before timing: %d.\n", (int)pid);
+                LogReport report;
+                // TODO: better format
+                report.message = stringNumberJoin("Monitored process died automatically. PID: ", (int)pid);
+                report.type = INFO;
+                saveLogReport(report);
+                free(report.message);
             }
         }
+
+        logFinalReport(killCount);
         return 0;
     }
 }

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "Logging.h"
+#include "Utils.h"
 #include "memwatch.h"
 
 void saveLogReport(LogReport report)
@@ -28,4 +29,23 @@ void saveLogReport(LogReport report)
             break;
     } 
     printf("%s\n", report.message);
+}
+
+void printLogReport(LogReport report)
+{
+    // TODO: fix these
+    saveLogReport(report);
+}
+
+void logFinalReport(int killCount)
+{
+    LogReport report;
+    report.type = INFO;
+    char* message = stringNumberJoin("Exiting. ", killCount);
+    char* message2 = stringJoin(message, " process(es) killed.");
+    free(message);
+    report.message = message2;
+    saveLogReport(report);
+    printLogReport(report);
+    free(message2);
 }

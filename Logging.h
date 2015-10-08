@@ -10,5 +10,5 @@ typedef struct
 } LogReport;
 
 void saveLogReport(LogReport message);
-
+void logFinalReport(int killCount);
 #endif

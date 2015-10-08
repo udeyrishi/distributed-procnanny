@@ -277,7 +277,7 @@ bool killProcess(Process process)
     return (bool)(result == 0);
 }
 
-void killOtherProcNannys()
+bool killOtherProcNannys()
 {
     int num = 0;
     Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
@@ -286,13 +286,13 @@ void killOtherProcNannys()
         if (num == 0)
         {
             // Nothing found
-            return;
+            return true;
         }
         LogReport report;
         report.message = "Unexpected behaviour. Process** is NULL but count > 0";
         report.type = DEBUG;
         saveLogReport(report);
-        exit(-1);
+        return false;
     }
 
     int i;
@@ -313,12 +313,31 @@ void killOtherProcNannys()
                 report.type = ERROR;
                 saveLogReport(report);
                 safeFree(report.message);
-                exit(-1);
+                return false;
             }
         }
     }
 
     destroyProcessArray(procs, num);
+    return true;
+}
+
+// private
+void logProcessMonitoringInit(char* processName, pid_t pid)
+{
+    LogReport report;
+    char* message = stringJoin("Initializing monitoring of process '", processName); 
+    char* message2 = stringJoin(message, "' (PID ");
+    free(message);
+    message = stringNumberJoin(message2, (int)pid);
+    free(message2);
+    message2 = stringJoin(message, ").");
+    free(message);
+    message = NULL;
+    report.message = message2;
+    report.type = ACTION;
+    saveLogReport(report);
+    free(message2);
 }
 
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode)
@@ -345,10 +364,16 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
         
         if (p -> pid == getpid())
         {
-            // config contains procnanny...not happening...
-            // TODO: log it
+            // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that. 
+            // Should never happen/be done.
+            LogReport report;
+            report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
+            report.type = WARNING;
+            saveLogReport(report);
             continue;
         }
+
+        logProcessMonitoringInit(processName, p->pid);
 
         pid = p -> pid;
         switch (pid = fork())
