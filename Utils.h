@@ -9,6 +9,7 @@ void safeFree(void* pointer);
 void safeMwFree(void* pointer);
 char* stringJoin(const char* first, const char* second);
 char* stringNumberJoin(const char* first, int second);
-char* numberStrngJoin(int first, const char* second);
+char* stringULongJoin(const char* first, unsigned long int second);
+char* numberStringJoin(int first, const char* second);
 bool compareStrings(const char* first, const char* second);
 #endif

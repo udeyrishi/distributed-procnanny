@@ -322,24 +322,6 @@ bool killOtherProcNannys()
     return true;
 }
 
-// private
-void logProcessMonitoringInit(char* processName, pid_t pid)
-{
-    LogReport report;
-    char* message = stringJoin("Initializing monitoring of process '", processName); 
-    char* message2 = stringJoin(message, "' (PID ");
-    free(message);
-    message = stringNumberJoin(message2, (int)pid);
-    free(message2);
-    message2 = stringJoin(message, ").");
-    free(message);
-    message = NULL;
-    report.message = message2;
-    report.type = ACTION;
-    saveLogReport(report);
-    free(message2);
-}
-
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode)
 {
     int num = 0;

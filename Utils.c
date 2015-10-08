@@ -65,7 +65,14 @@ char* stringNumberJoin(const char* first, int second)
     return stringJoin(first, str);
 }
 
-char* numberStrngJoin(int first, const char* second)
+char* stringULongJoin(const char* first, unsigned long int second)
+{
+    char str[15]; // good enough
+    sprintf(str, "%lu", second);
+    return stringJoin(first, str);
+}
+
+char* numberStringJoin(int first, const char* second)
 {
 	char str[15]; // good enough
     sprintf(str, "%d", first);

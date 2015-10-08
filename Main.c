@@ -77,13 +77,7 @@ int main(int argc, char** argv)
             if (status == 0)
             {
                 ++killCount;
-                LogReport report;
-                report.message = stringNumberJoin("PID killed: ", pid);
-                report.type = ACTION;
-                saveLogReport(report);
-                free(report.message);
-                // TODO: Format:
-                //Action: PID 332 (a.out) killed after exceeding 120 seconds.
+                logProcessKill(pid, " ", duration);
             }
             else if (status < 0)
             {
@@ -95,12 +89,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                LogReport report;
-                // TODO: better format
-                report.message = stringNumberJoin("Monitored process died automatically. PID: ", (int)pid);
-                report.type = INFO;
-                saveLogReport(report);
-                free(report.message);
+                logSelfDying(pid, " ", duration);
             }
         }
 
