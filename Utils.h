@@ -10,4 +10,5 @@ char* stringNumberJoin(const char* first, int second);
 char* stringULongJoin(const char* first, unsigned long int second);
 char* numberStringJoin(int first, const char* second);
 bool compareStrings(const char* first, const char* second);
+char* copyString(char* source);
 #endif

@@ -71,3 +71,8 @@ bool compareStrings(const char* first, const char* second)
 {
 	return (bool)(strcmp(first, second) == 0);
 }
+
+char* copyString(char* source)
+{
+    return stringJoin("", source);
+}

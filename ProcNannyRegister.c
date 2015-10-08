@@ -12,7 +12,15 @@ RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitor
 
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this)
 {
+	if (this == NULL)
+	{
+		return NULL;
+	}
 	RegisterEntry* next = this->next;
+	if (this->monitoredProcess != NULL)
+	{
+		processDestructor(this->monitoredProcess);
+	}
 	free(this);
 	return next;
 }

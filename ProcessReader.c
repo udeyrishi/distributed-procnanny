@@ -75,6 +75,21 @@ void processDestructor(Process* this)
     free(this);
 }
 
+void copyProcess(Process* destination, Process* source)
+{
+    destination->user = copyString(source->user);
+    destination->pid = source->pid;
+    destination->cpu = source->cpu;
+    destination->mem = source->mem;
+    destination->vsz = source->vsz;
+    destination->rss = source->rss;
+    destination->tty = copyString(source->tty);
+    destination->stat = copyString(source->stat);
+    destination->start = copyString(source->start);
+    destination->time = copyString(source->time);
+    destination->command = copyString(source->command);
+}
+
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report) 
 {
@@ -360,6 +375,7 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
         logProcessMonitoringInit(processName, p->pid);
 
         RegisterEntry* newEntry;
+        Process* copy;
         //pid = p -> pid;
         switch (pid = fork())
         {
@@ -412,8 +428,11 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
             default:
                 // parent
-                newEntry = constuctorRegisterEntry(pid, p, NULL);
-                assert(tailPointer-> next == NULL);
+                copy = (Process*)malloc(sizeof(Process));
+                copyProcess(copy, p);
+                newEntry = constuctorRegisterEntry(pid, copy, NULL);
+                //printf("%d", (int)tailPointer->next);
+                //assert(tailPointer-> next == NULL);
                 tailPointer->next = newEntry;
                 break;
         }
