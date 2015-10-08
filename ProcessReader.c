@@ -184,29 +184,29 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
     int source;
     int destination = 0;
 
-    char* command1 = stringJoin("sh -c ps -u | grep ", processName);
-    char* command2 = stringJoin("grep ", processName);
-
     for (source = 0; source < i; ++source)
     {
         Process* p = (Process*)malloc(sizeof(Process));
         processConstructor(lines[source], p);
-        if (compareStrings(p->command, command1) || compareStrings(p->command, command2))
-        {
-            processDestructor(p);
-        }
-        else
+
+        if (compareStrings(p->command, processName))
         {
             processes[destination++] = p;
         }
+        else
+        {
+            processDestructor(p);
+        }
     }
-
-    safeFree(command1);
-    safeFree(command2);
 
     freeOutputFromProgram(lines, i);
 
     *processesFound = destination;
+    if (destination == 0)
+    {
+        destroyProcessArray(processes, destination);
+        processes = NULL;
+    }
     return processes;
 }
 
