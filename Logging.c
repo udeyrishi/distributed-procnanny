@@ -12,14 +12,19 @@ void saveLogReport(LogReport report)
         case WARNING:
             printf("Warning: ");
             break;
-        case NORMAL:
-            printf("Normal: ");
+        case ACTION:
+            printf("Action: ");
             break;
         case FATAL:
             printf("Fatal: ");
             break;
+        case INFO:
+            printf("Info: ");
+            break;
+        case DEBUG:
+            printf("Debug: ");
+            break;
         default:
-            printf("Default: ");
             break;
     } 
     printf("%s\n", report.message);

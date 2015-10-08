@@ -1,7 +1,7 @@
 #ifndef __LOGGING__
 #define __LOGGING__
 
-typedef enum { FATAL, ERROR, WARNING, NORMAL } LogType;
+typedef enum { FATAL, INFO, ACTION, WARNING, ERROR, DEBUG } LogType;
 
 typedef struct
 {

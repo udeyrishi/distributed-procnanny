@@ -11,6 +11,7 @@ typedef int ProcessStatusCode;
 #define NOT_FOUND (ProcessStatusCode)1
 #define KILLED (ProcessStatusCode)0
 #define FAILED (ProcessStatusCode)-1
+#define CHILD (pid_t)0
 
 typedef struct 
 {
@@ -36,4 +37,6 @@ void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 bool killProcess(Process process);
+void killOtherProcNannys();
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode);
 #endif

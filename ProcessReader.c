@@ -2,6 +2,7 @@
 #include "Logging.h"
 #include "Utils.h"
 #include <sys/types.h>
+#include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,8 @@
 #include "memwatch.h"
 
 #define STARTING_ALLOCATION_SIZE 128
+
+const char* PROGRAM_NAME = "procnanny";
 
 //private
 char* getNextStrTokString(char* init)
@@ -85,8 +88,8 @@ char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogR
     FILE *fp = popen(programName, "r");
     if (fp == NULL)
     {
-        report -> message = "Error running program.";
-        report -> type = FATAL;
+        report -> message = "Error opening program stream file.";
+        report -> type = DEBUG;
         return (char**)NULL;
     }
 
@@ -125,7 +128,7 @@ char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogR
     if (pclose(fp) != 0) 
     {
         report -> message = "Failed to close the program stream.";
-        report -> type = ERROR;
+        report -> type = DEBUG;
         return (char**)NULL;
     }
 
@@ -235,8 +238,8 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
 
     if (argc < 2)
     {
-        report.message = "Config file path needed as argument";
-        report.type = FATAL;
+        report.message = "Config file path needed as argument.";
+        report.type = ERROR;
         saveLogReport(report);
         return -1;
     }
@@ -259,7 +262,7 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
     {
         freeOutputFromProgram(config, configLines);
         report.message = "Bad config file. Number of lines should be greater than 1.";
-        report.type = FATAL;
+        report.type = ERROR;
         saveLogReport(report);
         return -1;
     }
@@ -272,4 +275,137 @@ bool killProcess(Process process)
 {
     int result = kill(process.pid, SIGKILL);
     return (bool)(result == 0);
+}
+
+void killOtherProcNannys()
+{
+    int num = 0;
+    Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
+    if (procs == NULL)
+    {
+        if (num == 0)
+        {
+            // Nothing found
+            return;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        exit(-1);
+    }
+
+    int i;
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = procs[i];
+        if (getpid() != p->pid)
+        {
+            LogReport report;
+            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p->pid);
+            report.type = INFO;
+            saveLogReport(report);
+            safeFree(report.message);
+            
+            if(!killProcess(*p))
+            {
+                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p->pid);
+                report.type = ERROR;
+                saveLogReport(report);
+                safeFree(report.message);
+                exit(-1);
+            }
+        }
+    }
+
+    destroyProcessArray(procs, num);
+}
+
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode)
+{
+    int num = 0;
+    Process** procs = searchRunningProcesses(&num, processName);
+    if (procs == NULL)
+    {
+        if (num == 0)
+        {
+            *statusCode = NOT_FOUND;
+            return getpid();
+        }
+        exit(-1);
+    }
+
+    int i;
+    
+    pid_t pid = getpid();
+    
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = procs[i];
+        
+        if (p -> pid == getpid())
+        {
+            // config contains procnanny...not happening...
+            // TODO: log it
+            continue;
+        }
+
+        pid = p -> pid;
+        switch (pid = fork())
+        {
+            case CHILD:
+                sleep(duration);
+                int newNum = 0;
+                Process** processRecheck = searchRunningProcesses(&newNum, processName);
+                if (processRecheck == NULL)
+                {
+                    if (newNum == 0)
+                    {
+                        *statusCode = DIED;
+                    }
+                    else
+                    {
+                        *statusCode = FAILED;
+                    }
+                }
+                else
+                {
+                    int checkCounter;
+                    for (checkCounter = 0; checkCounter < newNum; ++checkCounter)
+                    {
+                        if (processRecheck[checkCounter] -> pid == p -> pid)
+                        {
+                            if(killProcess(*p))
+                            {
+                                *statusCode = KILLED;
+                            }
+                            else
+                            {
+                                *statusCode = FAILED;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (checkCounter == newNum)
+                    {
+                        *statusCode = DIED;
+                    }
+                }
+                destroyProcessArray(processRecheck, newNum);
+                i = num;
+                break;
+
+            case -1:
+                destroyProcessArray(procs, num);
+                exit(-1);
+
+            default:
+                // parent
+                break;
+        }
+    }
+
+    destroyProcessArray(procs, num);
+    return pid;
 }

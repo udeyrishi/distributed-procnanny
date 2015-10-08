@@ -10,7 +10,7 @@ bool checkMallocResult(void* pointer, LogReport* report)
     if (pointer == NULL)
     {
         report -> message = "Out of memory.";
-        report -> type = FATAL;
+        report -> type = DEBUG;
         return false;
     }
     return true;
