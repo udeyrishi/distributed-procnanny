@@ -1,34 +1,50 @@
 #include <stdio.h>
 #include "Logging.h"
 #include "Utils.h"
+#include <time.h>
+#include <string.h>
 #include "memwatch.h"
 
 void saveLogReport(LogReport report)
 {
+    char* output;
+    time_t rawtime;
+    time (&rawtime);
+    char* t = ctime(&rawtime);
+    t[strlen(t) - 1] = '\0';
+    output = stringJoin("[", t);
+    char* output2 = stringJoin(output, "] ");
+    free(output);
+
     switch(report.type)
     {
         case ERROR:
-            printf("Error: ");
+            output = stringJoin(output2, "Error: ");
             break;
         case WARNING:
-            printf("Warning: ");
+            output = stringJoin(output2, "Warning: ");
             break;
         case ACTION:
-            printf("Action: ");
+            output = stringJoin(output2, "Action: ");
             break;
         case FATAL:
-            printf("Fatal: ");
+            output = stringJoin(output2, "Fatal: ");
             break;
         case INFO:
-            printf("Info: ");
+            output = stringJoin(output2, "Info: ");
             break;
         case DEBUG:
-            printf("Debug: ");
+            output = stringJoin(output2, "Debug: ");
             break;
         default:
+            output = stringJoin(output2, "Unknown: ");
             break;
     } 
-    printf("%s\n", report.message);
+    free(output2);
+    output2 = stringJoin(output, report.message);
+    free(output);
+    printf("%s\n", output2);
+    free(output2);
 }
 
 void printLogReport(LogReport report)
