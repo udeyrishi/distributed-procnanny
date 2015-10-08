@@ -5,7 +5,8 @@
 #include <string.h>
 #include "memwatch.h"
 
-void saveLogReport(LogReport report)
+// private
+char* getTime()
 {
     char* output;
     time_t rawtime;
@@ -15,42 +16,57 @@ void saveLogReport(LogReport report)
     output = stringJoin("[", t);
     char* output2 = stringJoin(output, "] ");
     free(output);
+    return output2;
+}
 
+// private
+char* getFormattedReport(LogReport report)
+{
+    char* output;
+    char* currentTime = getTime();
     switch(report.type)
     {
         case ERROR:
-            output = stringJoin(output2, "Error: ");
+            output = stringJoin(currentTime, "Error: ");
             break;
         case WARNING:
-            output = stringJoin(output2, "Warning: ");
+            output = stringJoin(currentTime, "Warning: ");
             break;
         case ACTION:
-            output = stringJoin(output2, "Action: ");
+            output = stringJoin(currentTime, "Action: ");
             break;
         case FATAL:
-            output = stringJoin(output2, "Fatal: ");
+            output = stringJoin(currentTime, "Fatal: ");
             break;
         case INFO:
-            output = stringJoin(output2, "Info: ");
+            output = stringJoin(currentTime, "Info: ");
             break;
         case DEBUG:
-            output = stringJoin(output2, "Debug: ");
+            output = stringJoin(currentTime, "Debug: ");
             break;
         default:
-            output = stringJoin(output2, "Unknown: ");
+            output = stringJoin(currentTime, "Unknown: ");
             break;
     } 
-    free(output2);
-    output2 = stringJoin(output, report.message);
+    free(currentTime);
+    currentTime = NULL;
+    char* output2 = stringJoin(output, report.message);
     free(output);
-    printf("%s\n", output2);
-    free(output2);
+    return output2;
+}
+
+void saveLogReport(LogReport report)
+{
+    char* output = getFormattedReport(report);
+    printf("%s\n", output);
+    free(output);
 }
 
 void printLogReport(LogReport report)
 {
-    // TODO: fix these
-    saveLogReport(report);
+    char* output = getFormattedReport(report);
+    printf("%s\n", output);
+    free(output);
 }
 
 // TODO: Maybe for next part, write an easier method for general purpose string sizes...
