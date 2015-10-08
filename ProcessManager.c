@@ -241,6 +241,7 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
         report.message = "Config file path needed as argument.";
         report.type = ERROR;
         saveLogReport(report);
+        printLogReport(report);
         return -1;
     }
 
