@@ -1,5 +1,5 @@
-#ifndef __PROC_READER__
-#define __PROC_READER__
+#ifndef __PROC_MANAGER__
+#define __PROC_MANAGER__
 
 #include "Logging.h"
 #include "Utils.h"
