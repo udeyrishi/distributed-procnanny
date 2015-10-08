@@ -52,11 +52,11 @@ void processConstructor(char* processString, Process* this)
         else
         {
             spaceAdded = stringJoin(this->command, " ");
-            safeFree(this->command);
+            free(this->command);
         }
 
         char* newJoin = stringJoin(spaceAdded, commandPart);
-        safeFree(spaceAdded);
+        free(spaceAdded);
 
         this->command = newJoin;
     }
@@ -65,13 +65,13 @@ void processConstructor(char* processString, Process* this)
 // Destructor for a process
 void processDestructor(Process* this)
 {
-    safeFree(this->user);
-    safeFree(this->tty);
-    safeFree(this->stat);
-    safeFree(this->start);
-    safeFree(this->time);
-    safeFree(this->command);
-    safeFree(this);
+    free(this->user);
+    free(this->tty);
+    free(this->stat);
+    free(this->start);
+    free(this->time);
+    free(this->command);
+    free(this);
 }
 
 // Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
@@ -144,9 +144,9 @@ void freeOutputFromProgram(char** output, int numberLinesRead)
     {
         //getOutputFromProgram uses getline. Causes WILD free warning with memwatch if freed regularly   
         // Source: http://webdocs.cs.ualberta.ca/~paullu/C379/memwatch-2.71/FAQ
-        safeMwFree(output[i]);
+        mwFree_(output[i]);
     }
-    safeFree(output);
+    free(output);
 }
 
 Process** searchRunningProcesses(int* processesFound, const char* processName)
@@ -156,7 +156,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
     
     char* command = stringJoin("ps -u | grep ", processName);
     char** lines = getOutputFromProgram(command, &i, &report);
-    safeFree(command);
+    free(command);
     
     if (lines == NULL)
     {
@@ -220,14 +220,14 @@ void destroyProcessArray(Process** array, int count)
     {
         processDestructor(array[i]);
     }
-    safeFree(array);
+    free(array);
 }
 
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
 {
     char* catCall = stringJoin("cat ", filePath);
     char** lines = getOutputFromProgram(catCall, numberLinesRead, report);
-    safeFree(catCall);
+    free(catCall);
     return lines;
 }
 
@@ -305,14 +305,14 @@ bool killOtherProcNannys()
             report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p->pid);
             report.type = INFO;
             saveLogReport(report);
-            safeFree(report.message);
+            free(report.message);
             
             if(!killProcess(*p))
             {
                 report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p->pid);
                 report.type = ERROR;
                 saveLogReport(report);
-                safeFree(report.message);
+                free(report.message);
                 return false;
             }
         }

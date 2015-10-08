@@ -16,18 +16,6 @@ bool checkMallocResult(void* pointer, LogReport* report)
     return true;
 }
 
-void safeFree(void* pointer)
-{
-	free(pointer);
-	pointer = NULL;
-}
-
-void safeMwFree(void* pointer)
-{
-	mwFree_(pointer);
-	pointer = NULL;
-}
-
 char* stringJoin(const char* first, const char* second)
 {
     int len1 = strlen(first);
@@ -43,7 +31,7 @@ char* stringJoin(const char* first, const char* second)
     char* temp = (char*)malloc(sizeof(char)*(len1 + 3));
     if (!checkMallocResult(temp, &report))
     {
-    	safeFree(joined);
+    	free(joined);
         return (char*)NULL;
     }
 
@@ -54,7 +42,7 @@ char* stringJoin(const char* first, const char* second)
 
     int n = sprintf(joined, temp, second);
     assert(n + 1 == sizeBuffer);
-    safeFree(temp);
+    free(temp);
     return joined;
 }
 
