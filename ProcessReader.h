@@ -7,6 +7,7 @@
 
 typedef int ProcessStatusCode;
 
+#define DIED (ProcessStatusCode)2
 #define NOT_FOUND (ProcessStatusCode)1
 #define KILLED (ProcessStatusCode)0
 #define FAILED (ProcessStatusCode)-1

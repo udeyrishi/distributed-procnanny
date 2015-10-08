@@ -52,7 +52,7 @@ void killOtherProcNannys()
     destroyProcessArray(procs, num);
 }
 
-pid_t monitor(char* processName, int duration, ProcessStatusCode* statusCode)
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode)
 {
     int num = 0;
     Process** procs = searchRunningProcesses(&num, processName);
@@ -81,17 +81,49 @@ pid_t monitor(char* processName, int duration, ProcessStatusCode* statusCode)
             continue;
         }
 
+        pid = p -> pid;
         switch (pid = fork())
         {
             case CHILD:
-                if(killProcess(*p))
+                sleep(duration);
+                int newNum = 0;
+                Process** processRecheck = searchRunningProcesses(&newNum, processName);
+                if (processRecheck == NULL)
                 {
-                    *statusCode = KILLED;
+                    if (newNum == 0)
+                    {
+                        *statusCode = DIED;
+                    }
+                    else
+                    {
+                        *statusCode = FAILED;
+                    }
                 }
                 else
                 {
-                    *statusCode = FAILED;
+                    int checkCounter;
+                    for (checkCounter = 0; checkCounter < newNum; ++checkCounter)
+                    {
+                        if (processRecheck[checkCounter] -> pid == p -> pid)
+                        {
+                            if(killProcess(*p))
+                            {
+                                *statusCode = KILLED;
+                            }
+                            else
+                            {
+                                *statusCode = FAILED;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (checkCounter == newNum)
+                    {
+                        *statusCode = DIED;
+                    }
                 }
+                destroyProcessArray(processRecheck, newNum);
                 i = num;
                 break;
 
@@ -119,8 +151,8 @@ int main(int argc, char** argv)
     {
         return -1;
     }
-    int duration = atoi(config[0]);
-    
+    unsigned long int duration = strtoul(config[0], NULL, 10);
+
     int i;
     ProcessStatusCode status = (ProcessStatusCode)-99; // Invalid
     bool isChild = false;
@@ -149,6 +181,7 @@ int main(int argc, char** argv)
     }
     else
     {
+        // FIX: this pid is the child's pid
         int status = 0;
         pid_t pid;
         while((pid = wait(&status)) != -1)
@@ -164,7 +197,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                printf("Debug: positive status code should never be returned by child proc.\n");
+                printf("Process died before timing: %d.\n", (int)pid);
             }
         }
         return 0;
