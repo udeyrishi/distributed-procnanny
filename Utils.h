@@ -2,17 +2,13 @@
 #define __UTILS_H__
 
 #include "Logging.h"
+#include <stdbool.h>
 
-#define TRUE 1
-#define FALSE 0
-
-typedef int Boolean;
-
-Boolean checkMallocResult(void* pointer, LogReport* report);
+bool checkMallocResult(void* pointer, LogReport* report);
 void safeFree(void* pointer);
 void safeMwFree(void* pointer);
 char* stringJoin(const char* first, const char* second);
 char* stringNumberJoin(const char* first, int second);
 char* numberStrngJoin(int first, const char* second);
-Boolean compareStrings(const char* first, const char* second);
+bool compareStrings(const char* first, const char* second);
 #endif

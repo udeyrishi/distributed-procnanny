@@ -5,6 +5,12 @@
 #include "Utils.h"
 #include <sys/types.h>
 
+typedef int ProcessStatusCode;
+
+#define NOT_FOUND (ProcessStatusCode)1
+#define KILLED (ProcessStatusCode)0
+#define FAILED (ProcessStatusCode)-1
+
 typedef struct 
 {
 	char* user;
@@ -28,5 +34,5 @@ void processConstructor(char* processString, Process* this);
 void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
-Boolean killProcess(Process process);
+bool killProcess(Process process);
 #endif

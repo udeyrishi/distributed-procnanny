@@ -91,7 +91,7 @@ char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogR
     }
 
     int i;
-    for (i = 0; TRUE; ++i)
+    for (i = 0; true; ++i)
     {
         int j;
         if (i >= currentAllocationSize)
@@ -268,15 +268,8 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
     return configLines;
 }
 
-Boolean killProcess(Process process)
+bool killProcess(Process process)
 {
     int result = kill(process.pid, SIGKILL);
-    if (result == 0)
-    {
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
+    return (bool)(result == 0);
 }

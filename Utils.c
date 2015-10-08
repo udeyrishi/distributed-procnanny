@@ -5,15 +5,15 @@
 #include <string.h>
 #include "memwatch.h"
 
-Boolean checkMallocResult(void* pointer, LogReport* report)
+bool checkMallocResult(void* pointer, LogReport* report)
 {
     if (pointer == NULL)
     {
         report -> message = "Out of memory.";
         report -> type = FATAL;
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 void safeFree(void* pointer)
@@ -72,7 +72,7 @@ char* numberStrngJoin(int first, const char* second)
     return stringJoin(str, second);
 }
 
-Boolean compareStrings(const char* first, const char* second)
+bool compareStrings(const char* first, const char* second)
 {
-	return (Boolean)(strcmp(first, second) == 0);
+	return (bool)(strcmp(first, second) == 0);
 }

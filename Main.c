@@ -9,8 +9,9 @@
 #include <unistd.h>
 #include "memwatch.h"
 
-const char* PROGRAM_NAME = "procnanny";
+#define CHILD (pid_t)0
 
+const char* PROGRAM_NAME = "procnanny";
 
 void killOtherProcNannys()
 {
@@ -21,7 +22,6 @@ void killOtherProcNannys()
         if (num == 0)
         {
             // Nothing found
-            destroyProcessArray(procs, num);
             return;
         }
         exit(-1);
@@ -52,6 +52,62 @@ void killOtherProcNannys()
     destroyProcessArray(procs, num);
 }
 
+pid_t monitor(char* processName, int duration, ProcessStatusCode* statusCode)
+{
+    int num = 0;
+    Process** procs = searchRunningProcesses(&num, processName);
+    if (procs == NULL)
+    {
+        if (num == 0)
+        {
+            *statusCode = NOT_FOUND;
+            return getpid();
+        }
+        exit(-1);
+    }
+
+    int i;
+    
+    pid_t pid = getpid();
+    
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = procs[i];
+        
+        if (p -> pid == getpid())
+        {
+            // config contains procnanny...not happening...
+            // TODO: log it
+            continue;
+        }
+
+        switch (pid = fork())
+        {
+            case CHILD:
+                if(killProcess(*p))
+                {
+                    *statusCode = KILLED;
+                }
+                else
+                {
+                    *statusCode = FAILED;
+                }
+                i = num;
+                break;
+
+            case -1:
+                destroyProcessArray(procs, num);
+                exit(-1);
+
+            default:
+                // parent
+                break;
+        }
+    }
+
+    destroyProcessArray(procs, num);
+    return pid;
+}
 
 int main(int argc, char** argv)
 {
@@ -64,20 +120,53 @@ int main(int argc, char** argv)
         return -1;
     }
     int duration = atoi(config[0]);
-    printf("%d\n", duration);
     
-    /*
-	int numberProcesses;
-    Process* processes = getRunningProcesses(&numberProcesses);
-    if (processes == NULL)
+    int i;
+    ProcessStatusCode status = (ProcessStatusCode)-99; // Invalid
+    bool isChild = false;
+
+    for (i = 1; i < configLength; ++i)
     {
-        return -1;
+        char* processName = config[i];
+
+        if (monitor(processName, duration, &status) == CHILD)
+        {
+            isChild = true;
+            break;
+        }
+        else if ((int)status != -99)
+        {
+            // TODO better NOT_FOUND and FAILED logging.
+            printf("Parent returned status %d when trying to set up a child monitor process.\n", (int)status);
+        }
     }
 
-    
-    destroyProcessArray(processes, numberProcesses);
-    */
     freeOutputFromProgram(config, configLength);
     
-    return 0;
+    if (isChild)
+    {
+        return (int)status;
+    }
+    else
+    {
+        int status = 0;
+        pid_t pid;
+        while((pid = wait(&status)) != -1)
+        {
+            // TODO : proper logging
+            if (status == 0)
+            {
+                printf("Killed proc. pid: %d.\n", (int)pid);
+            }
+            else if (status < 0)
+            {
+                printf("Failed to kill proc. pid: %d.\n", (int)pid);
+            }
+            else
+            {
+                printf("Debug: positive status code should never be returned by child proc.\n");
+            }
+        }
+        return 0;
+    }
 }
