@@ -47,4 +47,9 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
 bool killProcess(Process process);
 bool killOtherProcNannys();
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer);
+RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
+RegisterEntry* destructorRegisterEntry(RegisterEntry* this);
+void destructChain(RegisterEntry* root);
+// TODO: Maybe a HashMap if time permits?
+Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg);
 #endif

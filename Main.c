@@ -1,7 +1,6 @@
 #include "Logging.h"
 #include "ProcessReader.h"
 #include "Utils.h"
-#include "ProcNannyRegister.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
