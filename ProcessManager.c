@@ -215,6 +215,11 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
 
 void destroyProcessArray(Process** array, int count)
 {
+    if (array == NULL) 
+    {
+        return;
+    }
+
     int i;
     for (i = 0; i < count; ++i)
     {
@@ -320,7 +325,30 @@ bool killOtherProcNannys()
     }
 
     destroyProcessArray(procs, num);
-    return true;
+    procs = NULL;
+
+    int verificationNum;
+    Process** verificationProcs = searchRunningProcesses(&verificationNum, PROGRAM_NAME);
+    if (verificationProcs == NULL)
+    {
+        if (verificationNum == 0)
+        {
+            // Nothing found
+            return true;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        return false;
+    }
+
+    LogReport report;
+    report.message = "Sent kill signal to other procnannys, but they didn't die.";
+    report.type = ERROR;
+    saveLogReport(report);
+    destroyProcessArray(verificationProcs, verificationNum);
+    return false;
 }
 
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer)
