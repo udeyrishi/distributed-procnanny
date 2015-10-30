@@ -14,6 +14,12 @@ int main(int argc, char** argv)
         exit(-1);
     }
     
+    LogReport parentInfo;
+    parentInfo.message = stringNumberJoin("Parent process is PID ", getpid());
+    parentInfo.type = INFO;
+    saveLogReport(parentInfo);
+    free(parentInfo.message);
+
     char** config = NULL;
     int configLength = getProcessesToMonitor(argc, argv, &config);
     if (configLength == -1)
