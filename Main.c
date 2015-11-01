@@ -89,11 +89,12 @@ int main(int argc, char** argv)
         int killCount = 0;
         while((pid = wait(&status)) != -1)
         {
-            Process* killedProcess = findMonitoredProcess(pid, root);
+            int monitorDuration = 0;
+            Process* killedProcess = findMonitoredProcess(pid, root, &monitorDuration);
             if (status == 0)
             {
                 ++killCount;
-                logProcessKill(killedProcess->pid, killedProcess->command, -99/*duration*/);
+                logProcessKill(killedProcess->pid, killedProcess->command, monitorDuration);
             }
             else if (status < 0)
             {
@@ -105,7 +106,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                logSelfDying(killedProcess->pid, killedProcess->command, -99/*duration*/);
+                logSelfDying(killedProcess->pid, killedProcess->command, monitorDuration);
             }
             free(killedProcess);
         }

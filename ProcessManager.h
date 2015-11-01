@@ -33,6 +33,7 @@ typedef struct registerEntry
 	pid_t monitoringProcess;
 	pid_t monitoredProcess;
 	char* monitoredName;
+	unsigned long int monitorDuration;
 	struct registerEntry* next;
 } RegisterEntry;
 
@@ -45,20 +46,30 @@ typedef struct
 MonitorRequest* constructMonitorRequest(char* requestString);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
+
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
 void freeOutputFromProgram(char** output, int numberLinesRead); 
+
 Process** searchRunningProcesses(int* processesFound, const char* processName);
+
 void destroyProcessArray(Process** array, int count);
 Process* processConstructor(char* processString);
 void processDestructor(Process* this);
+
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
+
 int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests);
+
 bool killProcess(Process process);
 bool killOtherProcNannys();
+
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer);
+
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);
 void destructChain(RegisterEntry* root);
+
 // TODO: Maybe a HashMap if time permits?
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg);
+Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, int* duration);
+
 #endif

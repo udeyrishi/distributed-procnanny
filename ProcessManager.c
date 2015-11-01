@@ -453,9 +453,6 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
         logProcessMonitoringInit(processName, p->pid);
 
-        //RegisterEntry* newEntry;
-        //Process* copy;
-        //pid = p -> pid;
         switch (pid = fork())
         {
             case CHILD:
@@ -507,16 +504,12 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
 
             default:
                 // parent
-                //copy = (Process*)malloc(sizeof(Process));
-                //copyProcess(copy, p);
                 tailPointer->monitoringProcess = pid;
                 tailPointer->monitoredProcess = p->pid;
+                tailPointer->monitorDuration = duration;
                 tailPointer->monitoredName = copyString(p->command);
                 tailPointer->next = constuctorRegisterEntry((pid_t)0, NULL, NULL);
                 tailPointer = tailPointer->next;
-                //printf("%d", (int)tailPointer->next);
-                //assert(tailPointer-> next == NULL);
-                //tailPointer->next = newEntry;
                 break;
         }
     }
@@ -563,7 +556,7 @@ void destructChain(RegisterEntry* root)
     }
 }
 
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg)
+Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, int* duration)
 {
     while (reg != NULL)
     {
@@ -572,6 +565,7 @@ Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg)
             Process* found = (Process*)malloc(sizeof(Process));
             found->command = reg->monitoredName;
             found->pid = reg->monitoredProcess;
+            *duration = reg->monitorDuration;
             return found;
         }
         else
