@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     parentInfo.type = INFO;
     saveLogReport(parentInfo);
     free(parentInfo.message);
+    parentInfo.message = NULL;
 
     MonitorRequest** monitorRequests = NULL;
     int configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
 
         status = (ProcessStatusCode)-99; // Invalid code for initial value
         
-        if (monitor(processName, duration, &status, tail) == CHILD)
+        if (monitor(processName, duration, &status, root, tail) == CHILD)
         {
             isChild = true;
             break;
@@ -89,7 +90,7 @@ int main(int argc, char** argv)
         int killCount = 0;
         while((pid = wait(&status)) != -1)
         {
-            int monitorDuration = 0;
+            unsigned long int monitorDuration = 0;
             Process* killedProcess = findMonitoredProcess(pid, root, &monitorDuration);
             if (status == 0)
             {

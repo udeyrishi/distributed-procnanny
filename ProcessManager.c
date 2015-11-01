@@ -417,7 +417,25 @@ bool killOtherProcNannys()
     return false;
 }
 
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer)
+//private 
+bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
+{
+    while (reg != NULL)
+    {
+        if (reg->monitoredProcess == pid)
+        {
+            return true;
+        }
+        else
+        {
+            reg = reg->next;
+        }
+    }
+    return false;
+}
+
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head,
+              RegisterEntry* tailPointer)
 {
     int num = 0;
     Process** procs = searchRunningProcesses(&num, processName);
@@ -448,6 +466,12 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
             report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
             report.type = WARNING;
             saveLogReport(report);
+            continue;
+        }
+
+        // find p->pid starting at head. If found, skip it, else monitor
+        if (isProcessAlreadyBeingMonitored(p->pid, head))
+        {
             continue;
         }
 
@@ -556,7 +580,7 @@ void destructChain(RegisterEntry* root)
     }
 }
 
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, int* duration)
+Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, unsigned long int* duration)
 {
     while (reg != NULL)
     {
