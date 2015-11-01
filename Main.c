@@ -20,14 +20,14 @@ int main(int argc, char** argv)
     saveLogReport(parentInfo);
     free(parentInfo.message);
 
-    char** config = NULL;
-    int configLength = getProcessesToMonitor(argc, argv, &config);
+    MonitorRequest** monitorRequests = NULL;
+    int configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+
     if (configLength == -1)
     {
         // Already logged
         return -1;
     }
-    unsigned long int duration = strtoul(config[0], NULL, 10);
 
     int i;
     ProcessStatusCode status;
@@ -36,9 +36,11 @@ int main(int argc, char** argv)
     RegisterEntry* root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;
 
-    for (i = 1; i < configLength; ++i)
+    for (i = 0; i < configLength; ++i)
     {
-        char* processName = config[i];
+        char* processName = monitorRequests[i]->processName;
+        unsigned long int duration = monitorRequests[i]->monitorDuration;
+
         status = (ProcessStatusCode)-99; // Invalid code for initial value
         
         if (monitor(processName, duration, &status, tail) == CHILD)
@@ -73,8 +75,8 @@ int main(int argc, char** argv)
         }
     }
 
-    freeOutputFromProgram(config, configLength);
-    
+    destroyMonitorRequestArray(monitorRequests, configLength);
+
     if (isChild)
     {
         destructChain(root);
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
             if (status == 0)
             {
                 ++killCount;
-                logProcessKill(killedProcess->pid, killedProcess->command, duration);
+                logProcessKill(killedProcess->pid, killedProcess->command, -99/*duration*/);
             }
             else if (status < 0)
             {
@@ -103,7 +105,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                logSelfDying(killedProcess->pid, killedProcess->command, duration);
+                logSelfDying(killedProcess->pid, killedProcess->command, -99/*duration*/);
             }
             free(killedProcess);
         }

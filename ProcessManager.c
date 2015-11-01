@@ -25,8 +25,16 @@ char* getNextStrTokString(char* init)
 }
 
 // Constructor of a Process struct from a processString (output line from the ps command)
-void processConstructor(char* processString, Process* this)
+Process* processConstructor(char* processString)
 {
+    Process* this = (Process*)malloc(sizeof(Process));
+    LogReport report;
+    if (!checkMallocResult(this, &report))
+    {
+        saveLogReport(report);
+        return (Process*)NULL;
+    }
+
     this->user = getNextStrTokString(processString);
     this->pid = atoi(strtok(NULL, " "));
     this->cpu = atof(strtok(NULL, " "));
@@ -60,11 +68,16 @@ void processConstructor(char* processString, Process* this)
 
         this->command = newJoin;
     }
+    return this;
 }
 
 // Destructor for a process
 void processDestructor(Process* this)
 {
+    if (this == NULL)
+    {
+        return;
+    }
     free(this->user);
     free(this->tty);
     free(this->stat);
@@ -189,9 +202,13 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
 
     for (source = 0; source < i; ++source)
     {
-        Process* p = (Process*)malloc(sizeof(Process));
-        processConstructor(lines[source], p);
-
+        Process* p = processConstructor(lines[source]);
+        if (p == NULL)
+        {
+            freeOutputFromProgram(lines, i);
+            *processesFound = -1;
+            return (Process**)NULL;
+        }
         if (compareStrings(p->command, processName))
         {
             processes[destination++] = p;
@@ -236,7 +253,7 @@ char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
     return lines;
 }
 
-int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
+int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests)
 {
     LogReport report;
     report.message = (char*)NULL;
@@ -264,17 +281,66 @@ int getProcessesToMonitor(int argc, char** argv, char*** configOutput)
         return -1;
     }
 
-    if (configLines < 2)
+    // Array of MonitorRequest pointers
+    MonitorRequest** requests = (MonitorRequest**)malloc(configLines*sizeof(MonitorRequest*));
+    if (!checkMallocResult(requests, &report))
     {
         freeOutputFromProgram(config, configLines);
-        report.message = "Bad config file. Number of lines should be greater than 1.";
-        report.type = ERROR;
         saveLogReport(report);
         return -1;
     }
 
-    *configOutput = config;
+    int i;
+    for (i = 0; i < configLines; ++i) 
+    {
+        MonitorRequest* request = constructMonitorRequest(config[i]);
+
+        if (request == NULL)
+        {
+            freeOutputFromProgram(config, configLines);
+            destroyMonitorRequestArray(requests, configLines);
+            return -1;
+        }
+        requests[i] = request;
+    }
+
+    freeOutputFromProgram(config, configLines);
+    *monitorRequests = requests;
     return configLines;
+}
+
+MonitorRequest* constructMonitorRequest(char* requestString)
+{
+    MonitorRequest* this = (MonitorRequest*)malloc(sizeof(MonitorRequest));
+    LogReport report;
+    if (!checkMallocResult(this, &report))
+    {
+        saveLogReport(report);
+        return NULL;
+    }
+
+    this->processName = getNextStrTokString(requestString);
+    char* monitorDuration = getNextStrTokString(NULL);
+    this->monitorDuration = strtoul(monitorDuration, NULL, 10);
+    free(monitorDuration);
+    return this;
+}
+
+void destroyMonitorRequest(MonitorRequest* this)
+{
+    free(this->processName);
+    free(this);
+}
+
+void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
+{
+    int i;
+    for (i = 0; i < size; ++i)
+    {
+        destroyMonitorRequest(requestArray[i]);
+    }
+
+    free(requestArray);
 }
 
 bool killProcess(Process process)

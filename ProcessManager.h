@@ -36,14 +36,23 @@ typedef struct registerEntry
 	struct registerEntry* next;
 } RegisterEntry;
 
+typedef struct
+{
+	char* processName;
+	unsigned long int monitorDuration;
+} MonitorRequest;
+
+MonitorRequest* constructMonitorRequest(char* requestString);
+void destroyMonitorRequest(MonitorRequest* this);
+void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
 void freeOutputFromProgram(char** output, int numberLinesRead); 
 Process** searchRunningProcesses(int* processesFound, const char* processName);
 void destroyProcessArray(Process** array, int count);
-void processConstructor(char* processString, Process* this);
+Process* processConstructor(char* processString);
 void processDestructor(Process* this);
 char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
-int getProcessesToMonitor(int argc, char** argv, char*** configOutput);
+int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests);
 bool killProcess(Process process);
 bool killOtherProcNannys();
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* tailPointer);
