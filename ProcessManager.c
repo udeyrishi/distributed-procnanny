@@ -604,7 +604,8 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
                     int writing = readFromChildFD[1];
                     int reading = writeToChildFD[0];
                     pid_t targetPid = p->pid;
-
+                    destroyProcessArray(runningProcesses, num);
+                    
                     while (true)
                     {
                         ProcessStatusCode childStatus = childMain(targetPid, duration);
@@ -640,6 +641,11 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
         {
             // use freeChild
             freeChild->isAvailable = false;
+            freeChild->monitoredProcess = p->pid;
+            free(freeChild->monitoredName);
+            freeChild->monitoredName = copyString(p->command);
+            freeChild->monitorDuration = duration;
+            freeChild->startingTime = time(NULL);
             MonitorMessage message;
             message.targetPid = p->pid;
             message.monitorDuration = duration;
