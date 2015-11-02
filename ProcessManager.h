@@ -76,8 +76,6 @@ bool killOtherProcNannys();
 
 void refreshRegisterEntries(RegisterEntry* head);
 
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head, RegisterEntry* tail);
-
 void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);

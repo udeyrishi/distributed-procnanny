@@ -605,7 +605,7 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
                     int reading = writeToChildFD[0];
                     pid_t targetPid = p->pid;
                     destroyProcessArray(runningProcesses, num);
-                    
+
                     while (true)
                     {
                         ProcessStatusCode childStatus = childMain(targetPid, duration);
@@ -655,116 +655,6 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
 
     destroyProcessArray(runningProcesses, num);
 }
-
-/*
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head,
-              RegisterEntry* tailPointer)
-{
-    int num = 0;
-    Process** procs = searchRunningProcesses(&num, processName);
-    if (procs == NULL)
-    {
-        if (num == 0)
-        {
-            *statusCode = NOT_FOUND;
-            return getpid();
-        }
-        exit(-1);
-    }
-
-    int i;
-    
-    // Start with current pid
-    pid_t pid = getpid();
-    
-    for(i = 0; i < num; ++i)
-    {
-        Process* p = procs[i];
-        
-        if (p -> pid == getpid())
-        {
-            // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that. 
-            // Should never happen/be done.
-            LogReport report;
-            report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
-            report.type = WARNING;
-            saveLogReport(report);
-            continue;
-        }
-
-        // find p->pid starting at head. If found, skip it, else monitor
-        if (isProcessAlreadyBeingMonitored(p->pid, head))
-        {
-            continue;
-        }
-
-        logProcessMonitoringInit(processName, p->pid);
-
-        switch (pid = fork())
-        {
-            case CHILD:
-                sleep(duration);
-                int newNum = 0;
-                Process** processRecheck = searchRunningProcesses(&newNum, processName);
-                if (processRecheck == NULL)
-                {
-                    if (newNum == 0)
-                    {
-                        *statusCode = DIED;
-                    }
-                    else
-                    {
-                        *statusCode = FAILED;
-                    }
-                }
-                else
-                {
-                    int checkCounter;
-                    for (checkCounter = 0; checkCounter < newNum; ++checkCounter)
-                    {
-                        if (processRecheck[checkCounter] -> pid == p -> pid)
-                        {
-                            if(killProcess(*p))
-                            {
-                                *statusCode = KILLED;
-                            }
-                            else
-                            {
-                                *statusCode = FAILED;
-                            }
-                            break;
-                        }
-                    }
-
-                    if (checkCounter == newNum)
-                    {
-                        *statusCode = DIED;
-                    }
-                }
-                destroyProcessArray(processRecheck, newNum);
-                i = num;
-                break;
-
-            case -1:
-                destroyProcessArray(procs, num);
-                exit(-1);
-
-            default:
-                // parent
-                tailPointer->monitoringProcess = pid;
-                tailPointer->monitoredProcess = p->pid;
-                tailPointer->monitorDuration = duration;
-                tailPointer->monitoredName = copyString(p->command);
-                tailPointer->next = constuctorRegisterEntry((pid_t)0, NULL, NULL);
-                tailPointer = tailPointer->next;
-                break;
-        }
-    }
-
-    destroyProcessArray(procs, num);
-    return pid;
-}
-*/
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
 {
