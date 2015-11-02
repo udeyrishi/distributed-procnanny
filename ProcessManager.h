@@ -8,6 +8,7 @@
 
 typedef char ProcessStatusCode;
 
+#define SIGKILL_CHILD SIGUSR1
 #define DIED (ProcessStatusCode)2
 #define NOT_FOUND (ProcessStatusCode)1
 #define KILLED (ProcessStatusCode)0
@@ -77,6 +78,7 @@ bool killOtherProcNannys();
 void refreshRegisterEntries(RegisterEntry* head);
 
 void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
+void killAllChildren(RegisterEntry* root);
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);

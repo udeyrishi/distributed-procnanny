@@ -656,6 +656,15 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
     destroyProcessArray(runningProcesses, num);
 }
 
+void killAllChildren(RegisterEntry* root)
+{
+    while (!isHeadNull(root))
+    {
+        kill(root->monitoringProcess, SIGKILL_CHILD);
+        root = root->next;
+    }
+}
+
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
 {
     RegisterEntry* entry = (RegisterEntry*)malloc(sizeof(RegisterEntry));

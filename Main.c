@@ -11,22 +11,35 @@
 
 MonitorRequest** monitorRequests;
 int configLength;
-
 RegisterEntry* root;
-RegisterEntry* tail;
 
-void cleanupGlobalResources()
+bool sigintReceived = false;
+
+void sigkillChildHandler(int signum)
 {
-    destroyMonitorRequestArray(monitorRequests, configLength);
-    monitorRequests = NULL;
-    configLength = 0;
-    destructChain(root);
-    root = NULL;
-    tail = NULL;
+    if (signum == SIGKILL_CHILD)
+    {
+        destroyMonitorRequestArray(monitorRequests, configLength);
+        destructChain(root);
+        printf("DEBUG: exiting...\n");
+        exit(0);
+    }
 }
+
+void sigintHandler(int signum)
+{
+    if (signum == SIGINT)
+    {
+        sigintReceived = true;
+    }
+}
+
 
 int main(int argc, char** argv)
 {
+    signal(SIGINT, sigintHandler);
+    signal(SIGKILL_CHILD, sigkillChildHandler);
+
     if (!killOtherProcNannys())
     {
         exit(-1);
@@ -49,10 +62,9 @@ int main(int argc, char** argv)
     }
 
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
-    tail = root;
+    RegisterEntry* tail = root;
     
-    // BEGIN NEW
-    while (true)
+    while (!sigintReceived)
     {
         refreshRegisterEntries(root);
         int i;
@@ -68,97 +80,7 @@ int main(int argc, char** argv)
         sleep(REFRESH_RATE);
     }
 
-
+    killAllChildren(root);
+    sigkillChildHandler(SIGKILL_CHILD);
     return 0;
-
-    // END NEW
-    
-    /*
-    int i;
-    ProcessStatusCode status;
-    bool isChild = false;
-
-    // spin off children, if needed (call monitor)
-    for (i = 0; i < configLength; ++i)
-    {
-        char* processName = monitorRequests[i]->processName;
-        unsigned long int duration = monitorRequests[i]->monitorDuration;
-
-        status = (ProcessStatusCode)-99; // Invalid code for initial value
-        
-        if (monitor(processName, duration, &status, root, tail) == CHILD)
-        {
-            isChild = true;
-            break;
-        }
-        else if ((int)status == -99)
-        {
-            // Normal parent execution
-            while(tail->next != NULL)
-            {
-                // Refresh tail
-                tail = tail->next;
-            }
-        }
-        else if (status == NOT_FOUND)
-        {
-            LogReport report;
-            report.message = stringJoin("No process found with name: ", processName);
-            report.type = INFO;
-            saveLogReport(report);
-            free(report.message);
-        }
-        else
-        {
-            LogReport report;
-            report.message = stringNumberJoin("Parent process returned unexpected status code while setting up a child process: ", (int)status);
-            report.type = DEBUG;
-            saveLogReport(report);
-            free(report.message);
-        }
-    }
-
-    // exit
-    if (isChild)
-    {
-        destroyMonitorRequestArray(monitorRequests, configLength);
-        destructChain(root);
-        return (int)status;
-    }
-    // wait for children
-    else
-    {
-        int status = 0;
-        pid_t pid;
-        int killCount = 0;
-        while((pid = wait(&status)) != -1)
-        {
-            unsigned long int monitorDuration = 0;
-            Process* killedProcess = findMonitoredProcess(pid, root, &monitorDuration);
-            if (status == 0)
-            {
-                ++killCount;
-                logProcessKill(killedProcess->pid, killedProcess->command, monitorDuration);
-            }
-            else if (status < 0)
-            {
-                LogReport report;
-                report.message = stringNumberJoin("Failed to kill process with PID: ", (int)killedProcess->pid);
-                report.type = ERROR;
-                saveLogReport(report);
-                free(report.message);
-            }
-            else
-            {
-                logSelfDying(killedProcess->pid, killedProcess->command, monitorDuration);
-            }
-            free(killedProcess);
-        }
-
-        destroyMonitorRequestArray(monitorRequests, configLength);
-        logFinalReport(killCount);
-        destructChain(root);
-        return 0;
-    }
-    */
 }
