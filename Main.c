@@ -7,6 +7,24 @@
 #include <sys/wait.h>
 #include "memwatch.h"
 
+#define REFRESH_RATE 5
+
+MonitorRequest** monitorRequests;
+int configLength;
+
+RegisterEntry* root;
+RegisterEntry* tail;
+
+void cleanupGlobalResources()
+{
+    destroyMonitorRequestArray(monitorRequests, configLength);
+    monitorRequests = NULL;
+    configLength = 0;
+    destructChain(root);
+    root = NULL;
+    tail = NULL;
+}
+
 int main(int argc, char** argv)
 {
     if (!killOtherProcNannys())
@@ -21,8 +39,8 @@ int main(int argc, char** argv)
     free(parentInfo.message);
     parentInfo.message = NULL;
 
-    MonitorRequest** monitorRequests = NULL;
-    int configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+    monitorRequests = NULL;
+    configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
 
     if (configLength == -1)
     {
@@ -30,13 +48,37 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
+    tail = root;
+    
+    // BEGIN NEW
+    while (true)
+    {
+        refreshRegisterEntries(root);
+        int i;
+        for (i = 0; i < configLength; ++i)
+        {
+            setupMonitoring(monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, root, tail);
+            while(tail->next != NULL)
+            {
+                // Refresh tail
+                tail = tail->next;
+            }
+        }
+        sleep(REFRESH_RATE);
+    }
+
+
+    return 0;
+
+    // END NEW
+    
+    /*
     int i;
     ProcessStatusCode status;
     bool isChild = false;
 
-    RegisterEntry* root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
-    RegisterEntry* tail = root;
-
+    // spin off children, if needed (call monitor)
     for (i = 0; i < configLength; ++i)
     {
         char* processName = monitorRequests[i]->processName;
@@ -76,13 +118,14 @@ int main(int argc, char** argv)
         }
     }
 
-    destroyMonitorRequestArray(monitorRequests, configLength);
-
+    // exit
     if (isChild)
     {
+        destroyMonitorRequestArray(monitorRequests, configLength);
         destructChain(root);
         return (int)status;
     }
+    // wait for children
     else
     {
         int status = 0;
@@ -112,8 +155,10 @@ int main(int argc, char** argv)
             free(killedProcess);
         }
 
+        destroyMonitorRequestArray(monitorRequests, configLength);
         logFinalReport(killCount);
         destructChain(root);
         return 0;
     }
+    */
 }

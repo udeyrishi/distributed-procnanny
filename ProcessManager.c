@@ -417,10 +417,16 @@ bool killOtherProcNannys()
     return false;
 }
 
+//private
+bool isHeadNull(RegisterEntry* head)
+{
+    return (head == NULL || head->monitoringProcess == (pid_t)0);
+}
+
 //private 
 bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
 {
-    while (reg != NULL)
+    while (!isHeadNull(reg))
     {
         if (reg->monitoredProcess == pid)
         {
@@ -434,6 +440,217 @@ bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
     return false;
 }
 
+void refreshRegisterEntries(RegisterEntry* head)
+{
+    if (isHeadNull(head))
+    {
+        return;
+    }
+
+    time_t currentTime = time(NULL);
+    while (head != NULL)
+    {
+        if (!(head->isAvailable) && (currentTime > head->startingTime + head->monitorDuration))
+        {
+            ProcessStatusCode message;
+            assert(read(head->readFromChildFD, &message, 1) == 1);
+
+            LogReport report;
+            switch(message)
+            {
+                case DIED:
+                    logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    break;
+
+                case KILLED:
+                    logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    break;
+
+                case FAILED:
+                    report.message = stringNumberJoin("Failed to kill process with PID: ", (int)head->monitoredProcess);
+                    report.type = ERROR;
+                    saveLogReport(report);
+                    free(report.message);
+                    break;
+
+                default:
+                    // TODO: UNEXPECTED
+                    break;
+            }
+
+            head->isAvailable = true;
+        }
+        head = head->next;
+    }
+}
+
+//private
+RegisterEntry* getFirstFreeChild(RegisterEntry* head)
+{
+    while (!isHeadNull(head))
+    {
+        if (head->isAvailable)
+        {
+            return head;
+        }
+        else 
+        {
+            head = head->next;
+        }
+    }
+
+    return NULL;
+}
+
+//private
+ProcessStatusCode childMain(pid_t pid, int duration)
+{
+    sleep(duration);
+    int result = kill(pid, SIGKILL);
+    if (result == 0)
+    {
+        return KILLED;
+    }
+    else
+    {
+        return DIED;
+    }
+}
+
+void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
+{
+    int num = 0;
+    Process** runningProcesses = searchRunningProcesses(&num, processName);
+    if (runningProcesses == NULL)
+    {
+        // Nothing to be done
+        if (num == 0)
+        {
+            LogReport report;
+            report.message = stringJoin("No process found with name: ", processName);
+            report.type = INFO;
+            saveLogReport(report);
+            free(report.message);
+            return;
+        }
+        exit(-1);
+    }
+
+    int i;
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = runningProcesses[i];
+
+        if (p -> pid == getpid())
+        {
+            // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that. 
+            // Should never happen/be done.
+            LogReport report;
+            report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
+            report.type = WARNING;
+            saveLogReport(report);
+            continue;
+        }
+
+        if (isProcessAlreadyBeingMonitored(p->pid, head))
+        {
+            continue;
+        }
+
+        logProcessMonitoringInit(processName, p->pid);
+
+        RegisterEntry* freeChild = getFirstFreeChild(head);
+        if (freeChild == NULL)
+        {
+            // fork a new child
+            int writeToChildFD[2];
+            int readFromChildFD[2];
+            if (pipe(writeToChildFD) < 0)
+            {
+                destroyProcessArray(runningProcesses, num);
+                LogReport report;
+                report.message = "Pipe creation error when trying to monitor new process.";
+                report.type = ERROR;
+                saveLogReport(report);
+                printLogReport(report);
+                // TODO: Kill all children
+                // TODO: Log all final kill count
+                exit(-1);
+            }
+
+            if (pipe(readFromChildFD) < 0)
+            {
+                destroyProcessArray(runningProcesses, num);
+                LogReport report;
+                report.message = "Pipe creation error when trying to monitor new process.";
+                report.type = ERROR;
+                saveLogReport(report);
+                printLogReport(report);
+                // TODO: Kill all children
+                // TODO: Log all final kill count
+                exit(-1);
+            }
+
+            pid_t forkPid = fork();
+            switch (forkPid)
+            {
+                case -1:
+                    destroyProcessArray(runningProcesses, num);
+                    exit(-1);
+
+                case CHILD:
+                    close(writeToChildFD[1]);
+                    close(readFromChildFD[0]);
+                    int writing = readFromChildFD[1];
+                    int reading = writeToChildFD[0];
+                    pid_t targetPid = p->pid;
+
+                    while (true)
+                    {
+                        ProcessStatusCode childStatus = childMain(targetPid, duration);
+                        write(writing, &childStatus, 1);
+
+                        MonitorMessage message;
+                        assert(read(reading, &message, sizeof(MonitorMessage)) == sizeof(MonitorMessage));
+                        targetPid = message.targetPid;
+                        duration = message.monitorDuration;
+                    }
+                    
+                    break;
+
+                default:
+                     // parent
+                    close(writeToChildFD[0]);
+                    close(readFromChildFD[1]);
+                    tail->monitoringProcess = forkPid;
+                    tail->monitoredProcess = p->pid;
+                    tail->monitorDuration = duration;
+                    tail->monitoredName = copyString(p->command);
+                    tail->startingTime = time(NULL);
+                    tail->isAvailable = false;
+                    tail->writeToChildFD = writeToChildFD[1];
+                    tail->readFromChildFD = readFromChildFD[0];
+                    tail->next = constuctorRegisterEntry((pid_t)0, NULL, NULL);
+                    tail = tail->next;
+                    break;
+            }
+
+        }
+        else
+        {
+            // use freeChild
+            freeChild->isAvailable = false;
+            MonitorMessage message;
+            message.targetPid = p->pid;
+            message.monitorDuration = duration;
+            write(freeChild->writeToChildFD, &message, sizeof(MonitorMessage));
+        }
+    }
+
+    destroyProcessArray(runningProcesses, num);
+}
+
+/*
 pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head,
               RegisterEntry* tailPointer)
 {
@@ -541,6 +758,7 @@ pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* 
     destroyProcessArray(procs, num);
     return pid;
 }
+*/
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
 {

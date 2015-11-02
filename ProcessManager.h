@@ -3,9 +3,10 @@
 
 #include "Logging.h"
 #include "Utils.h"
+#include <time.h>
 #include <sys/types.h>
 
-typedef int ProcessStatusCode;
+typedef char ProcessStatusCode;
 
 #define DIED (ProcessStatusCode)2
 #define NOT_FOUND (ProcessStatusCode)1
@@ -34,6 +35,10 @@ typedef struct registerEntry
 	pid_t monitoredProcess;
 	char* monitoredName;
 	unsigned long int monitorDuration;
+	time_t startingTime;
+	bool isAvailable;
+	int writeToChildFD;
+	int readFromChildFD;
 	struct registerEntry* next;
 } RegisterEntry;
 
@@ -42,6 +47,12 @@ typedef struct
 	char* processName;
 	unsigned long int monitorDuration;
 } MonitorRequest;
+
+typedef struct 
+{
+	pid_t targetPid;
+	unsigned long int monitorDuration;
+} MonitorMessage;
 
 MonitorRequest* constructMonitorRequest(char* requestString);
 void destroyMonitorRequest(MonitorRequest* this);
@@ -63,7 +74,11 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
 bool killProcess(Process process);
 bool killOtherProcNannys();
 
-pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head, RegisterEntry* tailPointer);
+void refreshRegisterEntries(RegisterEntry* head);
+
+pid_t monitor(char* processName, unsigned long int duration, ProcessStatusCode* statusCode, RegisterEntry* head, RegisterEntry* tail);
+
+void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);
