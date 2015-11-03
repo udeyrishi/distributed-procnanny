@@ -1,6 +1,8 @@
 #include "ProcessManager.h"
 #include "Logging.h"
 #include "Utils.h"
+#include "MonitorRequest.h"
+#include "RegisterEntry.h"
 #include "ProgramIO.h"
 #include <sys/types.h>
 #include <signal.h>
@@ -16,78 +18,14 @@ RegisterEntry* root = NULL;
 int writingToParent = 0;
 int readingFromParent = 0;
 
+bool sigintReceived = false;
+bool readConfig = false;
+
+//private
 void cleanupGlobals()
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
     destructChain(root);
-}
-
-bool killOtherProcNannys()
-{
-    int num = 0;
-    Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
-    if (procs == NULL)
-    {
-        if (num == 0)
-        {
-            // Nothing found
-            return true;
-        }
-        LogReport report;
-        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
-        report.type = DEBUG;
-        saveLogReport(report);
-        return false;
-    }
-
-    int i;
-    for(i = 0; i < num; ++i)
-    {
-        Process* p = procs[i];
-        if (getpid() != p->pid)
-        {
-            LogReport report;
-            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p->pid);
-            report.type = INFO;
-            saveLogReport(report);
-            free(report.message);
-            
-            if(!killProcess(*p))
-            {
-                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p->pid);
-                report.type = ERROR;
-                saveLogReport(report);
-                free(report.message);
-                return false;
-            }
-        }
-    }
-
-    destroyProcessArray(procs, num);
-    procs = NULL;
-
-    int verificationNum;
-    Process** verificationProcs = searchRunningProcesses(&verificationNum, PROGRAM_NAME);
-    if (verificationProcs == NULL)
-    {
-        if (verificationNum == 0)
-        {
-            // Nothing found
-            return true;
-        }
-        LogReport report;
-        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
-        report.type = DEBUG;
-        saveLogReport(report);
-        return false;
-    }
-
-    LogReport report;
-    report.message = "Sent kill signal to other procnannys, but they didn't die.";
-    report.type = ERROR;
-    saveLogReport(report);
-    destroyProcessArray(verificationProcs, verificationNum);
-    return false;
 }
 
 //private
@@ -105,6 +43,7 @@ ProcessStatusCode childMain(pid_t pid, int duration)
     }
 }
 
+//private
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
     int num = 0;
@@ -249,7 +188,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
     destroyProcessArray(runningProcesses, num);
 }
 
-// private
+//private
 void rereadConfig(int argc, char** argv)
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
@@ -264,10 +203,7 @@ void rereadConfig(int argc, char** argv)
     }
 }
 
-
-bool sigintReceived = false;
-bool readConfig = false;
-
+//private
 void sigintHandler(int signum)
 {
     if (signum == SIGINT)
@@ -276,12 +212,81 @@ void sigintHandler(int signum)
     }
 }
 
+//private
 void sighupHandler(int signum)
 {
     if (signum == SIGHUP)
     {
         readConfig = true;
     }
+}
+
+bool killOtherProcNannys()
+{
+    int num = 0;
+    Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
+    if (procs == NULL)
+    {
+        if (num == 0)
+        {
+            // Nothing found
+            return true;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        return false;
+    }
+
+    int i;
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = procs[i];
+        if (getpid() != p->pid)
+        {
+            LogReport report;
+            report.message = stringNumberJoin("Another procnanny found. Killing it. PID: ", (int)p->pid);
+            report.type = INFO;
+            saveLogReport(report);
+            free(report.message);
+            
+            if(!killProcess(*p))
+            {
+                report.message = stringNumberJoin("Failed to kill another procnanny. PID: ", (int)p->pid);
+                report.type = ERROR;
+                saveLogReport(report);
+                free(report.message);
+                return false;
+            }
+        }
+    }
+
+    destroyProcessArray(procs, num);
+    procs = NULL;
+
+    int verificationNum;
+    Process** verificationProcs = searchRunningProcesses(&verificationNum, PROGRAM_NAME);
+    if (verificationProcs == NULL)
+    {
+        if (verificationNum == 0)
+        {
+            // Nothing found
+            return true;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        return false;
+    }
+
+    LogReport report;
+    report.message = "Sent kill signal to other procnannys, but they didn't die.";
+    report.type = ERROR;
+    saveLogReport(report);
+    destroyProcessArray(verificationProcs, verificationNum);
+    return false;
 }
 
 int monitor(int refreshRate, int argc, char** argv)
