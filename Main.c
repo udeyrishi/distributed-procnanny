@@ -9,11 +9,12 @@
 
 #define REFRESH_RATE 5
 
-MonitorRequest** monitorRequests;
-int configLength;
-RegisterEntry* root;
+MonitorRequest** monitorRequests = NULL;
+int configLength = 0;
+RegisterEntry* root = NULL;
 
 bool sigintReceived = false;
+bool readConfig = true;
 
 void cleanupGlobals()
 {
@@ -39,11 +40,19 @@ void sigintHandler(int signum)
     }
 }
 
+void sighupHandler(int signum)
+{
+    if (signum == SIGHUP)
+    {
+        readConfig = true;
+    }
+}
 
 int main(int argc, char** argv)
 {
     signal(SIGINT, sigintHandler);
     signal(SIGKILL_CHILD, sigkillChildHandler);
+    signal(SIGHUP, sighupHandler);
 
     if (!killOtherProcNannys())
     {
@@ -57,22 +66,31 @@ int main(int argc, char** argv)
     free(parentInfo.message);
     parentInfo.message = NULL;
 
-    monitorRequests = NULL;
-    configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
-    bool isRetry = false;
-
-    if (configLength == -1)
-    {
-        // Already logged
-        return -1;
-    }
-
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;
     
     int killCount = 0;
+
+    bool isRetry = false;
     while (!sigintReceived)
     {
+        if (readConfig)
+        {
+            logSighupCatch(argv[1]);
+            readConfig = false;
+            destroyMonitorRequestArray(monitorRequests, configLength);
+            monitorRequests = NULL;
+            configLength = 0;
+            configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+            isRetry = false;
+
+            if (configLength == -1)
+            {
+                // Already logged
+                return -1;
+            }
+        }
+
         killCount += refreshRegisterEntries(root);
         int i;
         for (i = 0; i < configLength; ++i)

@@ -19,4 +19,5 @@ void logFinalReport(int killCount);
 void logProcessMonitoringInit(char* processName, pid_t pid);
 void logProcessKill(pid_t pid, const char* name, unsigned long int duration);
 void logSelfDying(pid_t pid, const char* name, unsigned long int duration);
+void logSighupCatch(char* fileName);
 #endif

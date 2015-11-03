@@ -337,6 +337,11 @@ void destroyMonitorRequest(MonitorRequest* this)
 
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
 {
+    if (requestArray == NULL)
+    {
+        return;
+    }
+    
     int i;
     for (i = 0; i < size; ++i)
     {
