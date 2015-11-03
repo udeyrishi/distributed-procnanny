@@ -522,8 +522,9 @@ ProcessStatusCode childMain(pid_t pid, int duration)
     }
 }
 
-void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
+void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
+
     int num = 0;
     Process** runningProcesses = searchRunningProcesses(&num, processName);
     if (runningProcesses == NULL)
@@ -531,11 +532,15 @@ void setupMonitoring(char* processName, unsigned long int duration, RegisterEntr
         // Nothing to be done
         if (num == 0)
         {
-            LogReport report;
-            report.message = stringJoin("No process found with name: ", processName);
-            report.type = INFO;
-            saveLogReport(report);
-            free(report.message);
+            if (!isRetry)
+            {
+                LogReport report;
+                report.message = stringJoin("No process found with name: ", processName);
+                report.type = INFO;
+                saveLogReport(report);
+                free(report.message);
+            }
+            
             return;
         }
         exit(-1);

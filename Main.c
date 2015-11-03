@@ -58,6 +58,7 @@ int main(int argc, char** argv)
 
     monitorRequests = NULL;
     configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+    bool isRetry = false;
 
     if (configLength == -1)
     {
@@ -75,7 +76,7 @@ int main(int argc, char** argv)
         int i;
         for (i = 0; i < configLength; ++i)
         {
-            setupMonitoring(monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, root, tail);
+            setupMonitoring(isRetry, monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, root, tail);
             while(tail->next != NULL)
             {
                 // Refresh tail
@@ -83,6 +84,7 @@ int main(int argc, char** argv)
             }
         }
         sleep(REFRESH_RATE);
+        isRetry = true;
     }
 
     killAllChildren(root);

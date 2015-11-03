@@ -77,7 +77,7 @@ bool killOtherProcNannys();
 
 int refreshRegisterEntries(RegisterEntry* head);
 
-void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
+void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 void killAllChildren(RegisterEntry* root);
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
