@@ -13,7 +13,6 @@ typedef struct
     char* message;
 } LogReport;
 
-bool appendToFile(const char* path, char* string);
 void saveLogReport(LogReport message);
 void printLogReport(LogReport report);
 void logFinalReport(int killCount);
