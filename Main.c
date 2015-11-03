@@ -14,7 +14,7 @@ int configLength = 0;
 RegisterEntry* root = NULL;
 
 bool sigintReceived = false;
-bool readConfig = true;
+bool readConfig = false;
 
 void cleanupGlobals()
 {
@@ -48,6 +48,20 @@ void sighupHandler(int signum)
     }
 }
 
+void rereadConfig(int argc, char** argv)
+{
+    destroyMonitorRequestArray(monitorRequests, configLength);
+    monitorRequests = NULL;
+    configLength = 0;
+    configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+
+    if (configLength == -1)
+    {
+        // Already logged
+        exit(-1);
+    }
+}
+
 int main(int argc, char** argv)
 {
     signal(SIGINT, sigintHandler);
@@ -70,25 +84,17 @@ int main(int argc, char** argv)
     RegisterEntry* tail = root;
     
     int killCount = 0;
-
+    rereadConfig(argc, argv);
     bool isRetry = false;
+
     while (!sigintReceived)
     {
         if (readConfig)
         {
             logSighupCatch(argv[1]);
             readConfig = false;
-            destroyMonitorRequestArray(monitorRequests, configLength);
-            monitorRequests = NULL;
-            configLength = 0;
-            configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
             isRetry = false;
-
-            if (configLength == -1)
-            {
-                // Already logged
-                return -1;
-            }
+            rereadConfig(argc, argv);
         }
 
         killCount += refreshRegisterEntries(root);
