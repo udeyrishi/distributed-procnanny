@@ -14,8 +14,18 @@
 
 const char* PROGRAM_NAME = "procnanny";
 
+MonitorRequest** monitorRequests = NULL;
+int configLength = 0;
+RegisterEntry* root = NULL;
+
 int writingToParent = 0;
 int readingFromParent = 0;
+
+void cleanupGlobals()
+{
+    destroyMonitorRequestArray(monitorRequests, configLength);
+    destructChain(root);
+}
 
 //private
 char* getNextStrTokString(char* init)
@@ -622,6 +632,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
                     readingFromParent = writeToChildFD[0];
                     pid_t targetPid = p->pid;
                     destroyProcessArray(runningProcesses, num);
+                    cleanupGlobals();
 
                     while (true)
                     {

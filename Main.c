@@ -9,28 +9,8 @@
 
 #define REFRESH_RATE 5
 
-MonitorRequest** monitorRequests = NULL;
-int configLength = 0;
-RegisterEntry* root = NULL;
-
 bool sigintReceived = false;
 bool readConfig = false;
-
-void cleanupGlobals()
-{
-    destroyMonitorRequestArray(monitorRequests, configLength);
-    destructChain(root);
-}
-
-void sigkillChildHandler(int signum)
-{
-    if (signum == SIGKILL_CHILD)
-    {
-        cleanupGlobals();
-        closeChildEndsOfPipes();
-        exit(0);
-    }
-}
 
 void sigintHandler(int signum)
 {
@@ -65,7 +45,6 @@ void rereadConfig(int argc, char** argv)
 int main(int argc, char** argv)
 {
     signal(SIGINT, sigintHandler);
-    signal(SIGKILL_CHILD, sigkillChildHandler);
     signal(SIGHUP, sighupHandler);
 
     if (!killOtherProcNannys())

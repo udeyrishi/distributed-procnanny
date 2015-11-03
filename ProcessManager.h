@@ -8,7 +8,7 @@
 
 typedef char ProcessStatusCode;
 
-#define SIGKILL_CHILD SIGUSR1
+#define SIGKILL_CHILD SIGKILL
 #define DIED (ProcessStatusCode)2
 #define NOT_FOUND (ProcessStatusCode)1
 #define KILLED (ProcessStatusCode)0
@@ -55,6 +55,11 @@ typedef struct
 	unsigned long int monitorDuration;
 } MonitorMessage;
 
+extern MonitorRequest** monitorRequests;
+extern int configLength;
+extern RegisterEntry* root;
+
+void cleanupGlobals();
 MonitorRequest* constructMonitorRequest(char* requestString);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
