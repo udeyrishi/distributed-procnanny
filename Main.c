@@ -15,13 +15,18 @@ RegisterEntry* root;
 
 bool sigintReceived = false;
 
+void cleanupGlobals()
+{
+    destroyMonitorRequestArray(monitorRequests, configLength);
+    destructChain(root);
+}
+
 void sigkillChildHandler(int signum)
 {
     if (signum == SIGKILL_CHILD)
     {
-        destroyMonitorRequestArray(monitorRequests, configLength);
-        destructChain(root);
-        printf("DEBUG: exiting...\n");
+        cleanupGlobals();
+        printf("Debug: %d dying...\n", getpid());
         exit(0);
     }
 }
@@ -81,6 +86,7 @@ int main(int argc, char** argv)
     }
 
     killAllChildren(root);
-    sigkillChildHandler(SIGKILL_CHILD);
+    cleanupGlobals();
+    printf("Debug: %d dying...\n", getpid());
     return 0;
 }
