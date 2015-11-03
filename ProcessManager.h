@@ -75,7 +75,7 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
 bool killProcess(Process process);
 bool killOtherProcNannys();
 
-void refreshRegisterEntries(RegisterEntry* head);
+int refreshRegisterEntries(RegisterEntry* head);
 
 void setupMonitoring(char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 void killAllChildren(RegisterEntry* root);

@@ -105,7 +105,7 @@ void logFinalReport(int killCount)
 {
     LogReport report;
     report.type = INFO;
-    char* message = stringNumberJoin("Exiting. ", killCount);
+    char* message = stringNumberJoin("Caught SIGINT. Exiting cleanly. ", killCount);
     char* message2 = stringJoin(message, " process(es) killed.");
     free(message);
     report.message = message2;

@@ -440,11 +440,13 @@ bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
     return false;
 }
 
-void refreshRegisterEntries(RegisterEntry* head)
+int refreshRegisterEntries(RegisterEntry* head)
 {
+    int killed = 0;
+
     if (isHeadNull(head))
     {
-        return;
+        return killed;
     }
 
     time_t currentTime = time(NULL);
@@ -463,6 +465,7 @@ void refreshRegisterEntries(RegisterEntry* head)
                     break;
 
                 case KILLED:
+                    ++killed;
                     logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
                     break;
 
@@ -482,6 +485,8 @@ void refreshRegisterEntries(RegisterEntry* head)
         }
         head = head->next;
     }
+
+    return killed;
 }
 
 //private

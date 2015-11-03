@@ -26,7 +26,6 @@ void sigkillChildHandler(int signum)
     if (signum == SIGKILL_CHILD)
     {
         cleanupGlobals();
-        printf("Debug: %d dying...\n", getpid());
         exit(0);
     }
 }
@@ -69,9 +68,10 @@ int main(int argc, char** argv)
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;
     
+    int killCount = 0;
     while (!sigintReceived)
     {
-        refreshRegisterEntries(root);
+        killCount += refreshRegisterEntries(root);
         int i;
         for (i = 0; i < configLength; ++i)
         {
@@ -87,6 +87,6 @@ int main(int argc, char** argv)
 
     killAllChildren(root);
     cleanupGlobals();
-    printf("Debug: %d dying...\n", getpid());
+    logFinalReport(killCount);
     return 0;
 }
