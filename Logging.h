@@ -1,9 +1,7 @@
 #ifndef __LOGGING__
 #define __LOGGING__
 
-#include <sys/types.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 typedef enum { FATAL, INFO, ACTION, WARNING, ERROR, DEBUG } LogType;
 
@@ -20,5 +18,5 @@ void logParentInit();
 void logProcessMonitoringInit(char* processName, pid_t pid);
 void logProcessKill(pid_t pid, const char* name, unsigned long int duration);
 void logSelfDying(pid_t pid, const char* name, unsigned long int duration);
-void logSighupCatch(char* fileName);
+void logSighupCatch(char* configFileName);
 #endif

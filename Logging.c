@@ -171,11 +171,11 @@ void logSelfDying(pid_t pid, const char* name, unsigned long int duration)
     free(report.message);
 }
 
-void logSighupCatch(char* fileName)
+void logSighupCatch(char* configFileName)
 {
     LogReport sighupReport;
     sighupReport.type = INFO;
-    char* message = stringJoin("Caught SIGHUP. Configuration file '", fileName); 
+    char* message = stringJoin("Caught SIGHUP. Configuration file '", configFileName); 
     char* message2 = stringJoin(message, "' re-read.");
     free(message);
     message = NULL;

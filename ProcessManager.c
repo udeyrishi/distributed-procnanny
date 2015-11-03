@@ -27,16 +27,6 @@ void cleanupGlobals()
     destructChain(root);
 }
 
-//private
-char* getNextStrTokString(char* init)
-{
-    char* next = strtok(init, " ");
-    int len = strlen(next);
-    char* p = (char*)malloc(sizeof(char)*(len+1));
-    strcpy(p, next);
-    return p;
-}
-
 // Constructor of a Process struct from a processString (output line from the ps command)
 Process* processConstructor(char* processString)
 {

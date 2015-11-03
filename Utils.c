@@ -76,3 +76,12 @@ char* copyString(char* source)
 {
     return stringJoin("", source);
 }
+
+char* getNextStrTokString(char* init)
+{
+    char* next = strtok(init, " ");
+    int len = strlen(next);
+    char* p = (char*)malloc(sizeof(char)*(len+1));
+    strcpy(p, next);
+    return p;
+}
