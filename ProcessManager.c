@@ -326,6 +326,9 @@ int monitor(int refreshRate, int argc, char** argv)
         isRetry = true;
     }
 
+    // Final refresh before exiting
+    killCount += refreshRegisterEntries(root);
+
     killAllChildren(root);
     cleanupGlobals();
     return killCount;
