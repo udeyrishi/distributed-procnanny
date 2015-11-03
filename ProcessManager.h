@@ -79,6 +79,7 @@ int refreshRegisterEntries(RegisterEntry* head);
 
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 void killAllChildren(RegisterEntry* root);
+void closeChildEndsOfPipes();
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);

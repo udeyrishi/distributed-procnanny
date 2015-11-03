@@ -26,6 +26,7 @@ void sigkillChildHandler(int signum)
     if (signum == SIGKILL_CHILD)
     {
         cleanupGlobals();
+        closeChildEndsOfPipes();
         exit(0);
     }
 }

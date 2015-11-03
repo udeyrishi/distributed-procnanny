@@ -14,6 +14,9 @@
 
 const char* PROGRAM_NAME = "procnanny";
 
+int writingToParent = 0;
+int readingFromParent = 0;
+
 //private
 char* getNextStrTokString(char* init)
 {
@@ -524,7 +527,6 @@ ProcessStatusCode childMain(pid_t pid, int duration)
 
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
-
     int num = 0;
     Process** runningProcesses = searchRunningProcesses(&num, processName);
     if (runningProcesses == NULL)
@@ -611,18 +613,18 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
                 case CHILD:
                     close(writeToChildFD[1]);
                     close(readFromChildFD[0]);
-                    int writing = readFromChildFD[1];
-                    int reading = writeToChildFD[0];
+                    writingToParent = readFromChildFD[1];
+                    readingFromParent = writeToChildFD[0];
                     pid_t targetPid = p->pid;
                     destroyProcessArray(runningProcesses, num);
 
                     while (true)
                     {
                         ProcessStatusCode childStatus = childMain(targetPid, duration);
-                        write(writing, &childStatus, 1);
+                        write(writingToParent, &childStatus, 1);
 
                         MonitorMessage message;
-                        assert(read(reading, &message, sizeof(MonitorMessage)) == sizeof(MonitorMessage));
+                        assert(read(readingFromParent, &message, sizeof(MonitorMessage)) == sizeof(MonitorMessage));
                         targetPid = message.targetPid;
                         duration = message.monitorDuration;
                     }
@@ -670,10 +672,19 @@ void killAllChildren(RegisterEntry* root)
 {
     while (!isHeadNull(root))
     {
+        close(root->writeToChildFD);
+        close(root->readFromChildFD);
         kill(root->monitoringProcess, SIGKILL_CHILD);
         root = root->next;
     }
 }
+
+void closeChildEndsOfPipes()
+{
+    close(writingToParent);
+    close(readingFromParent);
+}
+
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
 {
