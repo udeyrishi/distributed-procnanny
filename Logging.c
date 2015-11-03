@@ -184,3 +184,12 @@ void logSighupCatch(char* fileName)
     printLogReport(sighupReport);
     free(sighupReport.message);
 }
+
+void logParentInit()
+{
+    LogReport parentInfo;
+    parentInfo.message = stringNumberJoin("Parent process is PID ", getpid());
+    parentInfo.type = INFO;
+    saveLogReport(parentInfo);
+    free(parentInfo.message);
+}

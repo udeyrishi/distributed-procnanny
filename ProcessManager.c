@@ -684,6 +684,83 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
     destroyProcessArray(runningProcesses, num);
 }
 
+// private
+void rereadConfig(int argc, char** argv)
+{
+    destroyMonitorRequestArray(monitorRequests, configLength);
+    monitorRequests = NULL;
+    configLength = 0;
+    configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
+
+    if (configLength == -1)
+    {
+        // Already logged
+        exit(-1);
+    }
+}
+
+
+bool sigintReceived = false;
+bool readConfig = false;
+
+void sigintHandler(int signum)
+{
+    if (signum == SIGINT)
+    {
+        sigintReceived = true;
+    }
+}
+
+void sighupHandler(int signum)
+{
+    if (signum == SIGHUP)
+    {
+        readConfig = true;
+    }
+}
+
+int monitor(int refreshRate, int argc, char** argv)
+{
+    signal(SIGINT, sigintHandler);
+    signal(SIGHUP, sighupHandler);
+
+    root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
+    RegisterEntry* tail = root;
+    
+    int killCount = 0;
+    rereadConfig(argc, argv);
+    bool isRetry = false;
+
+    while (!sigintReceived)
+    {
+        if (readConfig)
+        {
+            logSighupCatch(argv[1]);
+            readConfig = false;
+            isRetry = false;
+            rereadConfig(argc, argv);
+        }
+
+        killCount += refreshRegisterEntries(root);
+        int i;
+        for (i = 0; i < configLength; ++i)
+        {
+            setupMonitoring(isRetry, monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, root, tail);
+            while(tail->next != NULL)
+            {
+                // Refresh tail
+                tail = tail->next;
+            }
+        }
+        sleep(refreshRate);
+        isRetry = true;
+    }
+
+    killAllChildren(root);
+    cleanupGlobals();
+    return killCount;
+}
+
 void killAllChildren(RegisterEntry* root)
 {
     while (!isHeadNull(root))

@@ -82,6 +82,7 @@ bool killOtherProcNannys();
 
 int refreshRegisterEntries(RegisterEntry* head);
 
+int monitor(int refreshRate, int argc, char** argv);
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail);
 void killAllChildren(RegisterEntry* root);
 void closeChildEndsOfPipes();
