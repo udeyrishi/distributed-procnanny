@@ -3,6 +3,7 @@
 
 #include "Logging.h"
 #include "Utils.h"
+#include "Process.h"
 #include <time.h>
 #include <sys/types.h>
 
@@ -14,21 +15,6 @@ typedef char ProcessStatusCode;
 #define KILLED (ProcessStatusCode)0
 #define FAILED (ProcessStatusCode)-1
 #define CHILD (pid_t)0
-
-typedef struct 
-{
-	char* user;
-	pid_t pid;
-	double cpu;
-	double mem;
-	int vsz;
-	int rss;
-	char* tty;
-	char* stat;
-	char* start;
-	char* time;
-	char* command;
-} Process;
 
 typedef struct registerEntry
 {
@@ -64,16 +50,7 @@ MonitorRequest* constructMonitorRequest(char* requestString);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
 
-char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 
-void freeOutputFromProgram(char** output, int numberLinesRead); 
-
 Process** searchRunningProcesses(int* processesFound, const char* processName);
-
-void destroyProcessArray(Process** array, int count);
-Process* processConstructor(char* processString);
-void processDestructor(Process* this);
-
-char** readFile(const char* filePath, int* numberLinesRead, LogReport* report);
 
 int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests);
 

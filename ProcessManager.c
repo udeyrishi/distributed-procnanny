@@ -1,16 +1,11 @@
 #include "ProcessManager.h"
 #include "Logging.h"
 #include "Utils.h"
+#include "ProgramIO.h"
 #include <sys/types.h>
-#include <unistd.h>
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 #include "memwatch.h"
-
-#define STARTING_ALLOCATION_SIZE 128
 
 const char* PROGRAM_NAME = "procnanny";
 
@@ -25,144 +20,6 @@ void cleanupGlobals()
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
     destructChain(root);
-}
-
-// Constructor of a Process struct from a processString (output line from the ps command)
-Process* processConstructor(char* processString)
-{
-    Process* this = (Process*)malloc(sizeof(Process));
-    LogReport report;
-    if (!checkMallocResult(this, &report))
-    {
-        saveLogReport(report);
-        return (Process*)NULL;
-    }
-
-    this->user = getNextStrTokString(processString);
-    this->pid = atoi(strtok(NULL, " "));
-    this->cpu = atof(strtok(NULL, " "));
-    this->mem = atof(strtok(NULL, " "));
-    this->vsz = atoi(strtok(NULL, " "));
-    this->rss = atoi(strtok(NULL, " "));
-    this->tty = getNextStrTokString(NULL);
-    this->stat = getNextStrTokString(NULL);
-    this->start = getNextStrTokString(NULL);
-    this->time = getNextStrTokString(NULL);
-
-    this->command = (char*)malloc(sizeof(char));
-    *this->command = '\0';
-
-    char* commandPart;
-    while ((commandPart = strtok(NULL, " ")) != NULL)
-    {
-        char* spaceAdded;
-        if (*this->command == '\0')
-        {
-            spaceAdded = this->command;
-        }
-        else
-        {
-            spaceAdded = stringJoin(this->command, " ");
-            free(this->command);
-        }
-
-        char* newJoin = stringJoin(spaceAdded, commandPart);
-        free(spaceAdded);
-
-        this->command = newJoin;
-    }
-    return this;
-}
-
-// Destructor for a process
-void processDestructor(Process* this)
-{
-    if (this == NULL)
-    {
-        return;
-    }
-    free(this->user);
-    free(this->tty);
-    free(this->stat);
-    free(this->start);
-    free(this->time);
-    free(this->command);
-    free(this);
-}
-
-// Adapted from: http://stackoverflow.com/questions/19173442/reading-each-line-of-file-into-array
-char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report) 
-{
-    int currentAllocationSize = STARTING_ALLOCATION_SIZE;
-    char **lines = (char **)malloc(sizeof(char*)*currentAllocationSize);
-    
-    if (!checkMallocResult(lines, report))
-    {
-        return (char**)NULL;
-    }
-
-    FILE *fp = popen(programName, "r");
-    if (fp == NULL)
-    {
-        report -> message = "Error opening program stream file.";
-        report -> type = DEBUG;
-        return (char**)NULL;
-    }
-
-    int i;
-    for (i = 0; true; ++i)
-    {
-        int j;
-        if (i >= currentAllocationSize)
-        {
-            int newSize;
-
-            // Double our allocation and re-allocate
-            newSize = currentAllocationSize*2;
-            lines = (char**)realloc(lines, sizeof(char*)*newSize);
-            if (!checkMallocResult(lines, report))
-            {
-                return (char**)NULL;
-            }
-            currentAllocationSize = newSize;
-        }
-
-        lines[i] = (char*)NULL;
-        size_t zeroSize = 0;
-        if (getline(&lines[i], &zeroSize, fp) == -1)
-        {
-            break;
-        }
-        
-        // Get rid of CR or LF at end of line
-        for (j = strlen(lines[i])-1; j >= 0 && (lines[i][j] == '\n' || lines[i][j] == '\r'); j--);
-
-        lines[i][j+1] = '\0';
-    }
-    
-    // Close file
-    if (pclose(fp) != 0) 
-    {
-        report -> message = "Failed to close the program stream.";
-        report -> type = DEBUG;
-        return (char**)NULL;
-    }
-
-    *numberLinesRead = i;
-
-    return lines;
-}
-
-void freeOutputFromProgram(char** output, int numberLinesRead)
-{
-    int i;
-    for (i = 0; i < numberLinesRead; ++i)
-    {
-        //getOutputFromProgram uses getline. Causes WILD free warning with memwatch if freed regularly   
-        // Source: http://webdocs.cs.ualberta.ca/~paullu/C379/memwatch-2.71/FAQ
-        mwFree_(output[i]);
-    }
-    free(output);
 }
 
 Process** searchRunningProcesses(int* processesFound, const char* processName)
@@ -231,29 +88,6 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
         processes = NULL;
     }
     return processes;
-}
-
-void destroyProcessArray(Process** array, int count)
-{
-    if (array == NULL) 
-    {
-        return;
-    }
-
-    int i;
-    for (i = 0; i < count; ++i)
-    {
-        processDestructor(array[i]);
-    }
-    free(array);
-}
-
-char** readFile(const char* filePath, int* numberLinesRead, LogReport* report)
-{
-    char* catCall = stringJoin("cat ", filePath);
-    char** lines = getOutputFromProgram(catCall, numberLinesRead, report);
-    free(catCall);
-    return lines;
 }
 
 int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests)
