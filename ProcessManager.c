@@ -22,80 +22,6 @@ void cleanupGlobals()
     destructChain(root);
 }
 
-Process** searchRunningProcesses(int* processesFound, const char* processName)
-{
-    int i = 0;
-    LogReport report;
-    
-    char* command = stringJoin("ps -u | grep ", processName);
-    char** lines = getOutputFromProgram(command, &i, &report);
-    free(command);
-    
-    if (lines == NULL)
-    {
-        // LogReport has been filled with some error
-        saveLogReport(report);
-        *processesFound = -1;
-        return (Process**)NULL;
-    }
-
-    if (i <= 2)
-    {
-        // Nothing's found. 2 because 2 internal processes are started
-        freeOutputFromProgram(lines, i);
-        *processesFound = 0;
-        return (Process**)NULL;
-    }
-
-    // i  > 2
-    Process** processes = (Process**)malloc(sizeof(Process*)*(i-2));
-    if (!checkMallocResult(processes, &report))
-    {
-        saveLogReport(report);
-        freeOutputFromProgram(lines, i);
-        *processesFound = -1;
-        return (Process**)NULL;
-    }
-
-    int source;
-    int destination = 0;
-
-    for (source = 0; source < i; ++source)
-    {
-        Process* p = processConstructor(lines[source]);
-        if (p == NULL)
-        {
-            freeOutputFromProgram(lines, i);
-            *processesFound = -1;
-            return (Process**)NULL;
-        }
-        if (compareStrings(p->command, processName))
-        {
-            processes[destination++] = p;
-        }
-        else
-        {
-            processDestructor(p);
-        }
-    }
-
-    freeOutputFromProgram(lines, i);
-
-    *processesFound = destination;
-    if (destination == 0)
-    {
-        destroyProcessArray(processes, destination);
-        processes = NULL;
-    }
-    return processes;
-}
-
-bool killProcess(Process process)
-{
-    int result = kill(process.pid, SIGKILL);
-    return (bool)(result == 0);
-}
-
 bool killOtherProcNannys()
 {
     int num = 0;
@@ -398,10 +324,4 @@ int monitor(int refreshRate, int argc, char** argv)
     killAllChildren(root);
     cleanupGlobals();
     return killCount;
-}
-
-void closeChildEndsOfPipes()
-{
-    close(writingToParent);
-    close(readingFromParent);
 }

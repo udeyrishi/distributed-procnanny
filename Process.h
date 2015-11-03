@@ -2,6 +2,7 @@
 #define __PROCESS_H__
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 typedef struct 
 {
@@ -21,5 +22,6 @@ typedef struct
 void destroyProcessArray(Process** array, int count);
 Process* processConstructor(char* processString);
 void processDestructor(Process* this);
-
+Process** searchRunningProcesses(int* processesFound, const char* processName);
+bool killProcess(Process process);
 #endif
