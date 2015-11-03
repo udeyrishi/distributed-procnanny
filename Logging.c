@@ -5,7 +5,8 @@
 #include <string.h>
 #include "memwatch.h"
 
-const char* logFileEnvVar = "PROCNANNYLOGS";
+const char* LOGFILE_ENV_VAR = "PROCNANNYLOGS";
+const char* LOGFILE_FLASH = "\n===================PROCNANNY v2.0, Udey Rishi===================";
 
 // private
 char* getTime()
@@ -57,7 +58,7 @@ char* getFormattedReport(LogReport report)
     return output2;
 }
 
-bool appendToFile(const char* path, char* string)
+bool appendToFile(const char* path, const char* string)
 {
     FILE *f = fopen(path, "a+");
     if (f == NULL)
@@ -77,11 +78,11 @@ bool appendToFile(const char* path, char* string)
 void saveLogReport(LogReport report)
 {
     char* output = getFormattedReport(report);
-    const char* logFile = getenv(logFileEnvVar);
+    const char* logFile = getenv(LOGFILE_ENV_VAR);
     if (logFile == NULL)
     {
         LogReport report;
-        report.message = stringJoin("Environment variable not found: ", logFileEnvVar);
+        report.message = stringJoin("Environment variable not found: ", LOGFILE_ENV_VAR);
         report.type = ERROR;
         printLogReport(report);
         free(report.message);
@@ -187,6 +188,20 @@ void logSighupCatch(char* configFileName)
 
 void logParentInit()
 {
+    const char* logFile = getenv(LOGFILE_ENV_VAR);
+    if (logFile == NULL)
+    {
+        LogReport report;
+        report.message = stringJoin("Environment variable not found: ", LOGFILE_ENV_VAR);
+        report.type = ERROR;
+        printLogReport(report);
+        free(report.message);
+    }
+    else
+    {
+        appendToFile(logFile, LOGFILE_FLASH);
+    }
+
     LogReport parentInfo;
     parentInfo.message = stringNumberJoin("Parent process is PID ", getpid());
     parentInfo.type = INFO;
