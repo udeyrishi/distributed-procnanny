@@ -10,5 +10,6 @@ typedef struct
 MonitorRequest* constructMonitorRequest(char* requestString);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
+int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests);
 
 #endif

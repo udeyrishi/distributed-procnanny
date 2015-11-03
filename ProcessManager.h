@@ -7,13 +7,6 @@
 #include "MonitorRequest.h"
 #include "RegisterEntry.h"
 
-typedef char ProcessStatusCode;
-
-#define SIGKILL_CHILD SIGKILL
-#define DIED (ProcessStatusCode)2
-#define NOT_FOUND (ProcessStatusCode)1
-#define KILLED (ProcessStatusCode)0
-#define FAILED (ProcessStatusCode)-1
 #define CHILD (pid_t)0
 
 typedef struct 

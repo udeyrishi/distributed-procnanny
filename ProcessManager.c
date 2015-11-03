@@ -90,62 +90,6 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
     return processes;
 }
 
-int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests)
-{
-    LogReport report;
-    report.message = (char*)NULL;
-
-    if (argc < 2)
-    {
-        report.message = "Config file path needed as argument.";
-        report.type = ERROR;
-        saveLogReport(report);
-        printLogReport(report);
-        return -1;
-    }
-
-    char* configPath = argv[1];
-    int configLines = 0;
-    char** config = readFile(configPath, &configLines, &report);
-    
-    if (report.message != NULL)
-    {
-        if (configLines > 0)
-        {
-            freeOutputFromProgram(config, configLines);
-        }
-        saveLogReport(report);
-        return -1;
-    }
-
-    // Array of MonitorRequest pointers
-    MonitorRequest** requests = (MonitorRequest**)malloc(configLines*sizeof(MonitorRequest*));
-    if (!checkMallocResult(requests, &report))
-    {
-        freeOutputFromProgram(config, configLines);
-        saveLogReport(report);
-        return -1;
-    }
-
-    int i;
-    for (i = 0; i < configLines; ++i) 
-    {
-        MonitorRequest* request = constructMonitorRequest(config[i]);
-
-        if (request == NULL)
-        {
-            freeOutputFromProgram(config, configLines);
-            destroyMonitorRequestArray(requests, configLines);
-            return -1;
-        }
-        requests[i] = request;
-    }
-
-    freeOutputFromProgram(config, configLines);
-    *monitorRequests = requests;
-    return configLines;
-}
-
 bool killProcess(Process process)
 {
     int result = kill(process.pid, SIGKILL);
@@ -218,96 +162,6 @@ bool killOtherProcNannys()
     saveLogReport(report);
     destroyProcessArray(verificationProcs, verificationNum);
     return false;
-}
-
-//private
-bool isHeadNull(RegisterEntry* head)
-{
-    return (head == NULL || head->monitoringProcess == (pid_t)0);
-}
-
-//private 
-bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
-{
-    while (!isHeadNull(reg))
-    {
-        if (reg->monitoredProcess == pid)
-        {
-            return true;
-        }
-        else
-        {
-            reg = reg->next;
-        }
-    }
-    return false;
-}
-
-int refreshRegisterEntries(RegisterEntry* head)
-{
-    int killed = 0;
-
-    if (isHeadNull(head))
-    {
-        return killed;
-    }
-
-    time_t currentTime = time(NULL);
-    while (head != NULL)
-    {
-        if (!(head->isAvailable) && (currentTime > head->startingTime + head->monitorDuration))
-        {
-            ProcessStatusCode message;
-            assert(read(head->readFromChildFD, &message, 1) == 1);
-
-            LogReport report;
-            switch(message)
-            {
-                case DIED:
-                    logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
-                    break;
-
-                case KILLED:
-                    ++killed;
-                    logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
-                    break;
-
-                case FAILED:
-                    report.message = stringNumberJoin("Failed to kill process with PID: ", (int)head->monitoredProcess);
-                    report.type = ERROR;
-                    saveLogReport(report);
-                    free(report.message);
-                    break;
-
-                default:
-                    // TODO: UNEXPECTED
-                    break;
-            }
-
-            head->isAvailable = true;
-        }
-        head = head->next;
-    }
-
-    return killed;
-}
-
-//private
-RegisterEntry* getFirstFreeChild(RegisterEntry* head)
-{
-    while (!isHeadNull(head))
-    {
-        if (head->isAvailable)
-        {
-            return head;
-        }
-        else 
-        {
-            head = head->next;
-        }
-    }
-
-    return NULL;
 }
 
 //private
@@ -544,17 +398,6 @@ int monitor(int refreshRate, int argc, char** argv)
     killAllChildren(root);
     cleanupGlobals();
     return killCount;
-}
-
-void killAllChildren(RegisterEntry* root)
-{
-    while (!isHeadNull(root))
-    {
-        close(root->writeToChildFD);
-        close(root->readFromChildFD);
-        kill(root->monitoringProcess, SIGKILL_CHILD);
-        root = root->next;
-    }
 }
 
 void closeChildEndsOfPipes()
