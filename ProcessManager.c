@@ -146,45 +146,6 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
     return configLines;
 }
 
-MonitorRequest* constructMonitorRequest(char* requestString)
-{
-    MonitorRequest* this = (MonitorRequest*)malloc(sizeof(MonitorRequest));
-    LogReport report;
-    if (!checkMallocResult(this, &report))
-    {
-        saveLogReport(report);
-        return NULL;
-    }
-
-    this->processName = getNextStrTokString(requestString);
-    char* monitorDuration = getNextStrTokString(NULL);
-    this->monitorDuration = strtoul(monitorDuration, NULL, 10);
-    free(monitorDuration);
-    return this;
-}
-
-void destroyMonitorRequest(MonitorRequest* this)
-{
-    free(this->processName);
-    free(this);
-}
-
-void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
-{
-    if (requestArray == NULL)
-    {
-        return;
-    }
-    
-    int i;
-    for (i = 0; i < size; ++i)
-    {
-        destroyMonitorRequest(requestArray[i]);
-    }
-
-    free(requestArray);
-}
-
 bool killProcess(Process process)
 {
     int result = kill(process.pid, SIGKILL);
@@ -600,63 +561,4 @@ void closeChildEndsOfPipes()
 {
     close(writingToParent);
     close(readingFromParent);
-}
-
-
-RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
-{
-    RegisterEntry* entry = (RegisterEntry*)malloc(sizeof(RegisterEntry));
-    entry->monitoringProcess = monitoringProcess;
-    if (monitoredProcess == NULL)
-    {
-        entry->monitoredProcess = (pid_t)0;
-        entry->monitoredName = NULL;
-    }
-    else
-    {
-        entry->monitoredProcess = monitoredProcess->pid;
-        entry->monitoredName = copyString(monitoredProcess->command);
-    }
-    entry->next = next;
-    return entry;
-}
-
-RegisterEntry* destructorRegisterEntry(RegisterEntry* this)
-{
-    if (this == NULL)
-    {
-        return NULL;
-    }
-    RegisterEntry* next = this->next;
-    free(this->monitoredName);
-    free(this);
-    return next;
-}
-
-void destructChain(RegisterEntry* root)
-{
-    while (root != NULL)
-    {
-        root = destructorRegisterEntry(root);
-    }
-}
-
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, unsigned long int* duration)
-{
-    while (reg != NULL)
-    {
-        if (reg->monitoringProcess == monitoringProcess)
-        {
-            Process* found = (Process*)malloc(sizeof(Process));
-            found->command = reg->monitoredName;
-            found->pid = reg->monitoredProcess;
-            *duration = reg->monitorDuration;
-            return found;
-        }
-        else
-        {
-            reg = reg->next;
-        }
-    }
-    return NULL;
 }
