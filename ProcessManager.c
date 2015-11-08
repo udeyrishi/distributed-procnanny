@@ -47,7 +47,7 @@ ProcessStatusCode childMain(pid_t pid, int duration)
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
     int num = 0;
-    Process** runningProcesses = searchRunningProcesses(&num, processName);
+    Process** runningProcesses = searchRunningProcesses(&num, processName, false);
     if (runningProcesses == NULL)
     {
         // Nothing to be done
@@ -221,10 +221,11 @@ void sighupHandler(int signum)
     }
 }
 
-bool killOtherProcNannys()
+//private
+bool killOtherProcNannysPrivate(const char* programName)
 {
     int num = 0;
-    Process** procs = searchRunningProcesses(&num, PROGRAM_NAME);
+    Process** procs = searchRunningProcesses(&num, programName, true);
     if (procs == NULL)
     {
         if (num == 0)
@@ -266,7 +267,7 @@ bool killOtherProcNannys()
     procs = NULL;
 
     int verificationNum;
-    Process** verificationProcs = searchRunningProcesses(&verificationNum, PROGRAM_NAME);
+    Process** verificationProcs = searchRunningProcesses(&verificationNum, programName, true);
     if (verificationProcs == NULL)
     {
         if (verificationNum == 0)
@@ -281,12 +282,31 @@ bool killOtherProcNannys()
         return false;
     }
 
-    LogReport report;
-    report.message = "Sent kill signal to other procnannys, but they didn't die.";
-    report.type = ERROR;
-    saveLogReport(report);
+    bool result;
+    if (verificationNum == 1 && verificationProcs[0]->pid == getpid())
+    {
+        result = true;
+    }
+    else
+    {
+        LogReport report;
+        report.message = "Sent kill signal to other procnannys, but they didn't die.";
+        report.type = ERROR;
+        saveLogReport(report);
+        result = false;
+    }
+
     destroyProcessArray(verificationProcs, verificationNum);
-    return false;
+    return result;
+}
+
+bool killOtherProcNannys()
+{
+    bool first = killOtherProcNannysPrivate(PROGRAM_NAME);
+    char* nameWithSlash = stringJoin("./", PROGRAM_NAME);
+    bool second = killOtherProcNannysPrivate(nameWithSlash);
+    free(nameWithSlash);
+    return first || second;
 }
 
 int monitor(int refreshRate, int argc, char** argv)

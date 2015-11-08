@@ -22,6 +22,6 @@ typedef struct
 void destroyProcessArray(Process** array, int count);
 Process* processConstructor(char* processString);
 void processDestructor(Process* this);
-Process** searchRunningProcesses(int* processesFound, const char* processName);
+Process** searchRunningProcesses(int* processesFound, const char* processName, bool ignoreCmdOptions);
 bool killProcess(Process process);
 #endif

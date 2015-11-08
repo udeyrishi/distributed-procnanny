@@ -90,7 +90,7 @@ bool killProcess(Process process)
     return (bool)(result == 0);
 }
 
-Process** searchRunningProcesses(int* processesFound, const char* processName)
+Process** searchRunningProcesses(int* processesFound, const char* processName, bool ignoreCmdOptions)
 {
     int i = 0;
     LogReport report;
@@ -140,6 +140,20 @@ Process** searchRunningProcesses(int* processesFound, const char* processName)
         if (compareStrings(p->command, processName))
         {
             processes[destination++] = p;
+        }
+        else if (ignoreCmdOptions)
+        {
+            char* temp = copyString(p->command);
+            char* part = strtok(temp, " ");
+            if (compareStrings(part, processName))
+            {
+                processes[destination++] = p;
+            }
+            else
+            {
+                processDestructor(p);
+            }
+            free(temp);
         }
         else
         {

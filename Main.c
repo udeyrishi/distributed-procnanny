@@ -6,12 +6,13 @@
 
 int main(int argc, char** argv)
 {
+    logParentInit();
+	
     if (!killOtherProcNannys())
     {
         exit(-1);
     }
 
-    logParentInit();
     int killCount = monitor(REFRESH_RATE, argc, argv);
     logFinalReport(killCount);
     return 0;
