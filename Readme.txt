@@ -1,15 +1,6 @@
-Name: Udey Chander Rishi
-Student Number: 1375308
-Unix ID: udey
-Lecture Section: EA1
-Instructor's Name: Dr. Paul Lu
-Lab Section: ED04
-TA's Name: Luke
-
 Description
 -----------
-procnanny is a process monitoring and cleaning program as required by the Assignemnt #2 of CMPUT 379, Fall 2015 at the University
-of Alberta. It monitors the specified processes in the user's space for their execution for a specified amount of real time, and if any of them exceeds that period, sends them a SIGKILL. The list of processes in the user's space is retreived using the unix
+procnanny is a process monitoring and cleaning program. It monitors the specified processes in the user's space for their execution for a specified amount of real time, and if any of them exceeds that period, sends them a SIGKILL. The list of processes in the user's space is retreived using the unix
 command "ps -u". If the monitored process dies on its own before specified time, procnanny does nothing.
 
 Making
