@@ -2,14 +2,7 @@
 #define __LOGGING__
 
 #include <unistd.h>
-
-typedef enum { FATAL, INFO, ACTION, WARNING, ERROR, DEBUG } LogType;
-
-typedef struct
-{
-    LogType type;
-    char* message;
-} LogReport;
+#include "LogReport.h"
 
 void saveLogReport(LogReport message);
 void printLogReport(LogReport report);
