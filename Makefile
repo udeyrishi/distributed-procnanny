@@ -1,5 +1,5 @@
-all: *.c
-	  gcc -Wall -DMEMWATCH -DMW_STDIO Logging.c Main.c MonitorRequest.c Process.c ProcessManager.c ProgramIO.c RegisterEntry.c Utils.c memwatch.c -o procnanny
+all:
+	  gcc -Iclient -Icommon -Iserver -Wall -DMEMWATCH -DMW_STDIO server/Logging.c server/Main.c common/MonitorRequest.c client/Process.c client/ProcessManager.c common/ProgramIO.c client/RegisterEntry.c common/Utils.c common/memwatch.c -o procnanny
 
 clean:
 	$(RM) procnanny
