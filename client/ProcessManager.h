@@ -12,6 +12,5 @@ typedef struct
 	unsigned long int monitorDuration;
 } MonitorMessage;
 
-bool killOtherProcNannys();
 int monitor(int refreshRate, int argc, char** argv);
 #endif

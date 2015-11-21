@@ -1,13 +1,13 @@
 #include "Process.h"
-#include "Logging.h"
 #include "Utils.h"
 #include "ProgramIO.h"
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 #include "memwatch.h"
 
 // Constructor of a Process struct from a processString (output line from the ps command)
-Process* processConstructor(char* processString)
+Process* processConstructor(char* processString, LoggerPointer saveLogReport)
 {
     Process* this = (Process*)malloc(sizeof(Process));
     LogReport report;
@@ -90,7 +90,7 @@ bool killProcess(Process process)
     return (bool)(result == 0);
 }
 
-Process** searchRunningProcesses(int* processesFound, const char* processName, bool ignoreCmdOptions)
+Process** searchRunningProcesses(int* processesFound, const char* processName, bool ignoreCmdOptions, LoggerPointer saveLogReport)
 {
     int i = 0;
     LogReport report;
@@ -130,7 +130,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName, b
 
     for (source = 0; source < i; ++source)
     {
-        Process* p = processConstructor(lines[source]);
+        Process* p = processConstructor(lines[source], saveLogReport);
         if (p == NULL)
         {
             freeOutputFromProgram(lines, i);
@@ -170,4 +170,108 @@ Process** searchRunningProcesses(int* processesFound, const char* processName, b
         processes = NULL;
     }
     return processes;
+}
+
+//private
+bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveLogReport)
+{
+    int num = 0;
+    Process** procs = searchRunningProcesses(&num, programName, true, saveLogReport);
+    if (procs == NULL)
+    {
+        if (num == 0)
+        {
+            // Nothing found
+            return true;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        return false;
+    }
+
+    int i;
+    for(i = 0; i < num; ++i)
+    {
+        Process* p = procs[i];
+        if (getpid() != p->pid)
+        {
+            LogReport report;
+            char* c = stringJoin("Another ", programName);
+            char* c2 = stringJoin(c, " found. Killing it. PID: ");
+            free(c);
+            c = NULL;
+
+            report.message = stringNumberJoin(c2, (int)p->pid);
+            free(c2);
+            c2 = NULL;
+
+            report.type = INFO;
+            saveLogReport(report);
+            free(report.message);
+            
+            if(!killProcess(*p))
+            {
+                c = stringJoin("Failed to kill another ", programName);
+                c2 = stringJoin(c, ". PID: "); 
+                free(c);
+                c = NULL;
+
+                report.message = stringNumberJoin(c2, (int)p->pid);
+                free(c2);
+                c2 = NULL;
+
+                report.type = ERROR;
+                saveLogReport(report);
+                free(report.message);
+                return false;
+            }
+        }
+    }
+
+    destroyProcessArray(procs, num);
+    procs = NULL;
+
+    int verificationNum;
+    Process** verificationProcs = searchRunningProcesses(&verificationNum, programName, true, saveLogReport);
+    if (verificationProcs == NULL)
+    {
+        if (verificationNum == 0)
+        {
+            // Nothing found
+            return true;
+        }
+        LogReport report;
+        report.message = "Unexpected behaviour. Process** is NULL but count > 0";
+        report.type = DEBUG;
+        saveLogReport(report);
+        return false;
+    }
+
+    bool result;
+    if (verificationNum == 1 && verificationProcs[0]->pid == getpid())
+    {
+        result = true;
+    }
+    else
+    {
+        LogReport report;
+        report.message = "Sent kill signal to other procnannys, but they didn't die.";
+        report.type = ERROR;
+        saveLogReport(report);
+        result = false;
+    }
+
+    destroyProcessArray(verificationProcs, verificationNum);
+    return result;
+}
+
+bool killOtherProcessAndVerify(const char* programName, LoggerPointer saveLogReport)
+{
+    bool first = killOtherProcessAndVerifyExact(programName, saveLogReport);
+    char* nameWithSlash = stringJoin("./", programName);
+    bool second = killOtherProcessAndVerifyExact(nameWithSlash, saveLogReport);
+    free(nameWithSlash);
+    return first || second;
 }

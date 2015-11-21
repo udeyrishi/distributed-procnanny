@@ -1,7 +1,7 @@
 #ifndef __PROGRAM_IO_H__
 #define __PROGRAM_IO_H__
 
-#include "Logging.h"
+#include "LogReport.h"
 #include "Utils.h"
 
 char** getOutputFromProgram(const char* programName, int * numberLinesRead, LogReport* report); 

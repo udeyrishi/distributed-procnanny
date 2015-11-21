@@ -9,4 +9,6 @@ typedef struct
     char* message;
 } LogReport;
 
+typedef void (*LoggerPointer)(LogReport);
+
 #endif
