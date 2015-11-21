@@ -1,4 +1,5 @@
 *.log
 *.out
+*.o
 procnanny
 config.txt
