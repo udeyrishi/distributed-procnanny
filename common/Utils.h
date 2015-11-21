@@ -2,7 +2,7 @@
 #define __UTILS_H__
 
 #include <stdbool.h>
-#include "Logging.h"
+#include "LogReport.h"
 
 bool checkMallocResult(void* pointer, LogReport* report);
 char* stringJoin(const char* first, const char* second);

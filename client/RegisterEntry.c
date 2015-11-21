@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <assert.h>
 #include <signal.h>
+#include <unistd.h>
 #include "memwatch.h"
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)

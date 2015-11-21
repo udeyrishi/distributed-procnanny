@@ -2,4 +2,6 @@
 *.out
 *.o
 procnanny
+procnanny.server
+procnanny.client
 config.txt
