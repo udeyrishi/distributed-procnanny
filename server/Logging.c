@@ -6,6 +6,7 @@
 #include "memwatch.h"
 
 const char* LOGFILE_ENV_VAR = "PROCNANNYLOGS";
+const char* SERVER_INFO_LOGFILE_ENV_VAR = "PROCNANNYSERVERINFO";
 const char* LOGFILE_FLASH = "\n===================PROCNANNY v2.0, Udey Rishi===================";
 
 // private
@@ -46,6 +47,9 @@ char* getFormattedReport(LogReport report)
             break;
         case DEBUG:
             output = stringJoin(currentTime, "Debug: ");
+            break;
+        case SERVER_INFO:
+            output = stringJoin(currentTime, "procnanny server: ");
             break;
         default:
             output = stringJoin(currentTime, "Unknown: ");
@@ -186,7 +190,8 @@ void logSighupCatch(char* configFileName)
     free(sighupReport.message);
 }
 
-void logParentInit()
+//private
+void logFlash()
 {
     const char* logFile = getenv(LOGFILE_ENV_VAR);
     if (logFile == NULL)
@@ -201,10 +206,82 @@ void logParentInit()
     {
         appendToFile(logFile, LOGFILE_FLASH);
     }
+}
+
+void logParentInit()
+{
+    logFlash();
 
     LogReport parentInfo;
     parentInfo.message = stringNumberJoin("Parent process is PID ", getpid());
     parentInfo.type = INFO;
     saveLogReport(parentInfo);
     free(parentInfo.message);
+}
+
+char* getServerInfoMessage(int port)
+{
+    //PID 345 on node xyz, port 2309
+    // Source: http://stackoverflow.com/questions/504810/how-do-i-find-the-current-machines-full-hostname-in-c-hostname-and-domain-info
+    char hostname[1025];
+    hostname[1024] = '\0';
+    gethostname(hostname, 1024);
+
+    char* c1 = stringNumberJoin("PID ", (int)getpid());
+    char* c2 = stringJoin(c1, " on node ");
+    free(c1);
+    c1 = stringJoin(c2, hostname);
+    free(c2);
+    c2 = stringJoin(c1, ", port ");
+    free(c1);
+    c1 = stringNumberJoin(c2, port);
+    free(c2);
+    return c1;
+}
+
+char* getServerInfoLogFileMessage(int port)
+{
+    // NODE XYZ PID 345 PORT 2309
+    char hostname[1025];
+    hostname[1024] = '\0';
+    gethostname(hostname, 1024);
+
+    char* c1 = stringJoin("NODE ", hostname);
+    char* c2 = stringJoin(c1, " PID ");
+    free(c1);
+    c1 = stringNumberJoin(c2, (int)getpid());
+    free(c2);
+    c2 = stringJoin(c1, " PORT ");
+    free(c1);
+    c1 = stringNumberJoin(c2, port);
+    free(c2);
+    return c1;
+}
+
+void logServerInfo(int port)
+{
+    logFlash();
+
+    LogReport report;
+    report.type = SERVER_INFO;
+    report.message = getServerInfoMessage(port);
+    saveLogReport(report);
+    printLogReport(report);
+    free(report.message);
+
+    const char* serverInfoFile = getenv(SERVER_INFO_LOGFILE_ENV_VAR);
+    if (serverInfoFile == NULL)
+    {
+        LogReport report2;
+        report2.message = stringJoin("Environment variable not found: ", SERVER_INFO_LOGFILE_ENV_VAR);
+        report2.type = ERROR;
+        printLogReport(report2);
+        free(report2.message);
+    }
+    else
+    {
+        char* c = getServerInfoLogFileMessage(port);
+        appendToFile(serverInfoFile, c);
+        free(c);
+    }
 }
