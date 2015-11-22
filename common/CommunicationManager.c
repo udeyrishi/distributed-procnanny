@@ -106,6 +106,11 @@ void manageReads(fd_set* activeFileDescriptors,
         fd_set readFileDescriptors = *activeFileDescriptors;
         if (select(FD_SETSIZE, &readFileDescriptors, NULL, NULL, timeout) < 0)
         {
+            // select return negative value is a signal was received
+            if (quit)
+            {
+                return;
+            }
             LogReport report;
             report.message = "Failed to wait on the read file descriptors using select";
             report.type = ERROR;

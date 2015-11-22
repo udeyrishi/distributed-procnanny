@@ -2,6 +2,7 @@
 #include "Socket.h"
 #include <netinet/in.h>
 #include <stdbool.h>
+#include <signal.h>
 #include "CommunicationManager.h"
 #include "MonitorRequest.h"
 #include <assert.h>
@@ -11,9 +12,10 @@
 #define MAX_CONNECTIONS 5
 
 int masterSocket = -1;
-fd_set clients;
+fd_set activeSockets;
 MonitorRequest** monitorRequests = NULL;
 int configLength = -1;
+bool sigintReceived = false;
 
 void rereadConfig(int argc, char** argv)
 {
@@ -122,7 +124,7 @@ void registerNewClient()
         free(report.message);
         exit(-1);
     }
-    FD_SET(clientSocket, &clients);
+    FD_SET(clientSocket, &activeSockets);
     sendConfigToClient(clientSocket);
 }
 
@@ -165,23 +167,33 @@ void dataReceivedCallback(int sock)
 
 void closeSockets()
 {
-    close(masterSocket);
-    masterSocket = -1;
     int i;
     for (i = 0; i < FD_SETSIZE; ++i)
     {
-        if (FD_ISSET(i, &clients))
+        if (FD_ISSET(i, &activeSockets))
         {
             close(i);
         }
     }
 }
 
+//private
+void sigintHandler(int signum)
+{    
+    if (signum == SIGINT)
+    {
+        sigintReceived = true;
+    }
+}
+
 void createServer(uint16_t port, int argc, char** argv)
 {
+    signal(SIGINT, sigintHandler);
     rereadConfig(argc, argv);
     makeServerSocket(port);
-    // manageReads
+    FD_ZERO (&activeSockets);
+    FD_SET (masterSocket, &activeSockets);
+    manageReads(&activeSockets, NULL, &sigintReceived, dataReceivedCallback, logger);    
     destroyGlobals();
     closeSockets();
 }
