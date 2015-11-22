@@ -1,16 +1,15 @@
 #include "MonitorRequest.h"
-#include "Logging.h"
 #include "Utils.h"
 #include "ProgramIO.h"
 #include "memwatch.h"
 
-MonitorRequest* constructMonitorRequest(char* requestString)
+MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport)
 {
     MonitorRequest* this = (MonitorRequest*)malloc(sizeof(MonitorRequest));
     LogReport report;
     if (!checkMallocResult(this, &report))
     {
-        saveLogReport(report);
+        saveLogReport(report, false);
         return NULL;
     }
 
@@ -43,7 +42,7 @@ void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
     free(requestArray);
 }
 
-int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests)
+int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport)
 {
     LogReport report;
     report.message = (char*)NULL;
@@ -52,8 +51,7 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
     {
         report.message = "Config file path needed as argument.";
         report.type = ERROR;
-        saveLogReport(report);
-        printLogReport(report);
+        saveLogReport(report, true);
         return -1;
     }
 
@@ -67,7 +65,7 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
         {
             freeOutputFromProgram(config, configLines);
         }
-        saveLogReport(report);
+        saveLogReport(report, false);
         return -1;
     }
 
@@ -76,14 +74,14 @@ int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorReques
     if (!checkMallocResult(requests, &report))
     {
         freeOutputFromProgram(config, configLines);
-        saveLogReport(report);
+        saveLogReport(report, false);
         return -1;
     }
 
     int i;
     for (i = 0; i < configLines; ++i) 
     {
-        MonitorRequest* request = constructMonitorRequest(config[i]);
+        MonitorRequest* request = constructMonitorRequest(config[i], saveLogReport);
 
         if (request == NULL)
         {

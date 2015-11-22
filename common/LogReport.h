@@ -1,6 +1,8 @@
 #ifndef __LOG_REPORT__
 #define __LOG_REPORT__
 
+#include <stdbool.h>
+
 typedef enum { FATAL, INFO, ACTION, WARNING, ERROR, DEBUG, SERVER_INFO } LogType;
 
 typedef struct
@@ -9,6 +11,6 @@ typedef struct
     char* message;
 } LogReport;
 
-typedef void (*LoggerPointer)(LogReport);
+typedef void (*LoggerPointer)(LogReport, bool);
 
 #endif

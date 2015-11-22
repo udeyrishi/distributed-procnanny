@@ -10,7 +10,7 @@ int createNewInternetSocket(LoggerPointer saveLogReport)
         LogReport report;
         report.message = "Failed to create a new socket.";
         report.type = ERROR;
-        saveLogReport(report);
+        saveLogReport(report, false);
     }
 
     return sock;

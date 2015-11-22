@@ -13,7 +13,7 @@ Process* processConstructor(char* processString, LoggerPointer saveLogReport)
     LogReport report;
     if (!checkMallocResult(this, &report))
     {
-        saveLogReport(report);
+        saveLogReport(report, false);
         return (Process*)NULL;
     }
 
@@ -102,7 +102,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName, b
     if (lines == NULL)
     {
         // LogReport has been filled with some error
-        saveLogReport(report);
+        saveLogReport(report, false);
         *processesFound = -1;
         return (Process**)NULL;
     }
@@ -119,7 +119,7 @@ Process** searchRunningProcesses(int* processesFound, const char* processName, b
     Process** processes = (Process**)malloc(sizeof(Process*)*(i-2));
     if (!checkMallocResult(processes, &report))
     {
-        saveLogReport(report);
+        saveLogReport(report, false);
         freeOutputFromProgram(lines, i);
         *processesFound = -1;
         return (Process**)NULL;
@@ -187,7 +187,7 @@ bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveL
         LogReport report;
         report.message = "Unexpected behaviour. Process** is NULL but count > 0";
         report.type = DEBUG;
-        saveLogReport(report);
+        saveLogReport(report, false);
         return false;
     }
 
@@ -208,7 +208,7 @@ bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveL
             c2 = NULL;
 
             report.type = INFO;
-            saveLogReport(report);
+            saveLogReport(report, false);
             free(report.message);
             
             if(!killProcess(*p))
@@ -223,7 +223,7 @@ bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveL
                 c2 = NULL;
 
                 report.type = ERROR;
-                saveLogReport(report);
+                saveLogReport(report, false);
                 free(report.message);
                 return false;
             }
@@ -245,7 +245,7 @@ bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveL
         LogReport report;
         report.message = "Unexpected behaviour. Process** is NULL but count > 0";
         report.type = DEBUG;
-        saveLogReport(report);
+        saveLogReport(report, false);
         return false;
     }
 
@@ -259,7 +259,7 @@ bool killOtherProcessAndVerifyExact(const char* programName, LoggerPointer saveL
         LogReport report;
         report.message = "Sent kill signal to other procnannys, but they didn't die.";
         report.type = ERROR;
-        saveLogReport(report);
+        saveLogReport(report, false);
         result = false;
     }
 

@@ -18,7 +18,7 @@ bool bindInternetSocketToPort(int sock, uint16_t port, LoggerPointer saveLogRepo
         LogReport report;
         report.message = "Failed to bind socket to address.";
         report.type = ERROR;
-        saveLogReport(report);
+        saveLogReport(report, false);
         return false;
     }
 
@@ -32,7 +32,7 @@ bool setupSocketToListen(int sock, LoggerPointer saveLogReport)
         LogReport report;
         report.message = "Failed to listen on main socket";
         report.type = ERROR;
-        saveLogReport(report);
+        saveLogReport(report, false);
         return false;
     }
 
