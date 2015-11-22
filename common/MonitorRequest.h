@@ -12,6 +12,6 @@ typedef struct
 MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
-int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport);
+int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport);
 
 #endif

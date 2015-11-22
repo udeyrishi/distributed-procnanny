@@ -6,22 +6,26 @@
 #include "Utils.h"
 #include "memwatch.h"
 
-uint32_t readUInt(int sock)
+uint32_t readUInt(int sock, LoggerPointer logger)
 {
     char bytes[4];
-    assert(readData(sock, bytes, 4) == 4);
+    assert(readData(sock, bytes, 4, logger) == 4);
     return ntohl(*(uint32_t *)bytes);
 }
 
-void writeUInt(int sock, uint32_t num)
+bool writeUInt(int sock, uint32_t num, LoggerPointer logger)
 {
     char* bytes = (char *)htonl(num);
-    assert(writeData(sock, bytes, sizeof(num)) == sizeof(num));
+    if (writeData(sock, bytes, sizeof(num), logger) < 0)
+    {
+        return false;
+    }
+    return true;
 }
 
 char* readString(int fd, LoggerPointer logger)
 {
-    uint32_t messageLength = readUInt(fd);
+    uint32_t messageLength = readUInt(fd, logger);
     char* string = (char*)malloc(sizeof(char)*messageLength);
 
     LogReport error;
@@ -31,29 +35,30 @@ char* readString(int fd, LoggerPointer logger)
         return (char*)-1;
     }
 
-    int size = readData(fd, string, messageLength);
+    int size = readData(fd, string, messageLength, logger);
     if (size < 0)
     {
-        error.message = stringNumberJoin("Reading data failed from fd: ", fd);
-        error.type = ERROR;
-        logger(error, false);
-        free(error.message);
+        free(string);
         return (char*)-1;
     }
     assert(size == messageLength);
     return string;
 }
 
-void writeString(int fd, char* string)
+bool writeString(int fd, char* string, LoggerPointer logger)
 {
     size_t length = strlen(string);
-    writeUInt(fd, length);
-    writeData(fd, string, length);
+
+    if (!writeUInt(fd, length, logger) || writeData(fd, string, length, logger) < 0)
+    {
+        return false;
+    }
+    return true;
 }
 
 // Source: https://eclass.srv.ualberta.ca/mod/resource/view.php?id=1766878
 // Jim Frost tutorial
-size_t writeData(int fd, const void* buffer, size_t size)
+size_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
 {
     size_t total = 0;
 
@@ -62,6 +67,11 @@ size_t writeData(int fd, const void* buffer, size_t size)
         size_t thisTime;
         if ((thisTime = write(fd, buffer, size - total)) < 0)
         {
+            LogReport report;
+            report.message = stringNumberJoin("Write failed to fd: ", fd);
+            report.type = ERROR;
+            logger(report, false);
+            free(report.message);
             return -1;
         }
         else
@@ -74,7 +84,7 @@ size_t writeData(int fd, const void* buffer, size_t size)
     return total;
 }
 
-size_t readData(int fd, void* buffer, size_t size)
+size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
 { 
     size_t total = 0;
 
@@ -83,6 +93,11 @@ size_t readData(int fd, void* buffer, size_t size)
         size_t thisTime;
         if ((thisTime = read(fd, buffer, size - total)) < 0)
         {
+            LogReport error;
+            error.message = stringNumberJoin("Reading data failed from fd: ", fd);
+            error.type = ERROR;
+            logger(error, false);
+            free(error.message);
             return -1;
         }
         else

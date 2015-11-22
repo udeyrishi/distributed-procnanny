@@ -5,5 +5,5 @@
 #include "Logging.h"
 
 void logger(LogReport report, bool verbose);
-void createServer(uint16_t port, int argc, char** argv);
+void createServer(uint16_t port, const char* configPath);
 #endif

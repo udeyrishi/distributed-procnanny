@@ -11,14 +11,14 @@
 typedef void (* DataReceivedCallback)(int fd);
 typedef void (* TimeoutCallback)(void);
 
-uint32_t readUInt(int sock);
-void writeUInt(int sock, uint32_t num);
+uint32_t readUInt(int sock, LoggerPointer logger);
+bool writeUInt(int sock, uint32_t num, LoggerPointer logger);
 
 char* readString(int fd, LoggerPointer logger);
-void writeString(int fd, char* string);
+bool writeString(int fd, char* string, LoggerPointer logger);
 
-size_t writeData(int fd, const void* buffer, size_t size);
-size_t readData(int fd, void* buffer, size_t size);
+size_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger);
+size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger);
 
 void manageReads(const fd_set* activeFileDescriptors, 
                  const struct timeval* timeout, 

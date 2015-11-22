@@ -42,20 +42,11 @@ void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
     free(requestArray);
 }
 
-int getProcessesToMonitor(int argc, char** argv, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport)
+int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport)
 {
     LogReport report;
     report.message = (char*)NULL;
-
-    if (argc < 2)
-    {
-        report.message = "Config file path needed as argument.";
-        report.type = ERROR;
-        saveLogReport(report, true);
-        return -1;
-    }
-
-    char* configPath = argv[1];
+    
     int configLines = 0;
     char** config = readFile(configPath, &configLines, &report);
     

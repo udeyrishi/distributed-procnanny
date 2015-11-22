@@ -17,7 +17,16 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    createServer(PORT, argc, argv);
+    if (argc < 2)
+    {
+        LogReport report;
+        report.message = "Config file path needed as argument.";
+        report.type = ERROR;
+        logger(report, true);
+        return -1;
+    }
+
+    createServer(PORT, argv[1]);
     
     return 0;
 }

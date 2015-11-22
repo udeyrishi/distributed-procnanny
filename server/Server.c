@@ -17,14 +17,14 @@ MonitorRequest** monitorRequests = NULL;
 int configLength = -1;
 bool sigintReceived = false;
 
-void rereadConfig(int argc, char** argv)
+void rereadConfig(const char* configPath)
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
     monitorRequests = NULL;
     configLength = 0;
-    configLength = getProcessesToMonitor(argc, argv, &monitorRequests, logger);
+    configLength = getProcessesToMonitor(configPath, &monitorRequests, logger);
 
-    if (configLength == -1)
+    if (configLength < 0)
     {
         // Already logged
         exit(-1);
@@ -61,7 +61,7 @@ bool bindInternetSocketToPort(int sock, uint16_t port)
         LogReport report;
         report.message = "Failed to bind socket to address.";
         report.type = ERROR;
-        saveLogReport(report);
+        logger(report, false);
         return false;
     }
 
@@ -76,7 +76,7 @@ bool setupSocketToListen(int sock)
         LogReport report;
         report.message = "Failed to listen on main socket";
         report.type = ERROR;
-        saveLogReport(report);
+        logger(report, false);
         return false;
     }
 
@@ -97,16 +97,24 @@ void makeServerSocket(uint16_t port)
 }
 
 // private
-void sendConfigToClient(int sock)
+bool sendConfigToClient(int sock)
 {
     assert(configLength >= 0);
-    writeUInt(sock, (uint32_t)configLength);
+    if (!writeUInt(sock, (uint32_t)configLength, logger))
+    {
+        return false;
+    }
     int i;
     for (i = 0; i < configLength; ++i)
     {
-        writeString(sock, monitorRequests[i]->processName);
-        writeUInt(sock, monitorRequests[i]->monitorDuration);
+        if (!(writeString(sock, monitorRequests[i]->processName, logger) && 
+              writeUInt(sock, monitorRequests[i]->monitorDuration, logger)))
+        {
+            return false;
+        }
     }
+
+    return true;
 }
 
 // private
@@ -120,12 +128,19 @@ void registerNewClient()
         LogReport report;
         report.message = stringNumberJoin("Failed to listen to new incoming client request on master socket: ", masterSocket);
         report.type = ERROR;
-        saveLogReport(report);
+        logger(report, false);
         free(report.message);
         exit(-1);
     }
     FD_SET(clientSocket, &activeSockets);
-    sendConfigToClient(clientSocket);
+    if (!sendConfigToClient(clientSocket))
+    {
+        LogReport report;
+        report.message =  stringNumberJoin("Failed to send config file to client at socket: ", clientSocket);
+        report.type = ERROR;
+        logger(report, false);
+        free(report.message);
+    }
 }
 
 //private
@@ -137,18 +152,13 @@ void logClientMessage(int sock)
     {
         exit(-1);
     }
-    size_t size = readData(sock, (char *)&(report.type), sizeof(report.type));
+    size_t size = readData(sock, (char *)&(report.type), sizeof(report.type), logger);
     if (size < 0)
     {
-        LogReport error;
-        error.message = stringNumberJoin("Reading data failed from socket: ", sock);
-        error.type = ERROR;
-        saveLogReport(error);
-        free(error.message);
         exit(-1);
     }
     assert(size == sizeof(report.type));
-    saveLogReport(report);
+    logger(report, false);
     free(report.message);
 }
 
@@ -186,14 +196,19 @@ void sigintHandler(int signum)
     }
 }
 
-void createServer(uint16_t port, int argc, char** argv)
+void createServer(uint16_t port, const char* configPath)
 {
+    // setup
     signal(SIGINT, sigintHandler);
-    rereadConfig(argc, argv);
+    rereadConfig(configPath);
     makeServerSocket(port);
     FD_ZERO (&activeSockets);
     FD_SET (masterSocket, &activeSockets);
+
+    // main loop
     manageReads(&activeSockets, NULL, &sigintReceived, dataReceivedCallback, NULL, logger);    
+
+    // teardown
     destroyGlobals();
     closeSockets();
 }
