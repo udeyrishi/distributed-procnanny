@@ -95,28 +95,41 @@ size_t readData(int fd, void* buffer, size_t size)
     return total;
 }
 
-void manageReads(fd_set* activeFileDescriptors, 
-                 struct timeval* timeout, 
-                 bool* quit,
-                 DataReceivedCallback onDataReceived, 
-                 TimeoutCallback onTimeout,
-                 LoggerPointer logger)
+void manageReads(const fd_set* activeFileDescriptors, 
+                 const struct timeval* timeout, 
+                 const bool* quit,
+                 const DataReceivedCallback onDataReceived, 
+                 const TimeoutCallback onTimeout,
+                 const LoggerPointer logger)
 {
+    struct timeval* timeoutCopy;
+    if (timeout == NULL)
+    {
+        timeoutCopy = NULL;
+    }
+    else
+    {
+        timeoutCopy = (struct timeval*)malloc(sizeof(struct timeval));
+    }
+
     while (!(*quit))
     {
         // Need copying after every select call because select may modify the timeout value
-        struct timeval timeoutCopy = *timeout;
+        if (timeout != NULL)
+        {
+            memcpy(timeoutCopy, timeout, sizeof(struct timeval));
+        }
         // Need copying because the caller may change in the activeFileDescriptors in the dataReceivedCallback
         // That change will only appear in the next iteration
         fd_set readFileDescriptors = *activeFileDescriptors;
 
-        int numReady = select(FD_SETSIZE, &readFileDescriptors, NULL, NULL, &timeoutCopy);
+        int numReady = select(FD_SETSIZE, &readFileDescriptors, NULL, NULL, timeoutCopy);
         if (numReady < 0)
         {
             // select return negative value is a signal was received -- no error in this case
             if (quit)
             {
-                return;
+                break;
             }
             LogReport report;
             report.message = "Failed to wait on the read file descriptors using select";
@@ -146,4 +159,6 @@ void manageReads(fd_set* activeFileDescriptors,
             }
         }
     }
+
+    free(timeoutCopy);
 }

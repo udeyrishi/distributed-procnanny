@@ -20,11 +20,11 @@ void writeString(int fd, char* string);
 size_t writeData(int fd, const void* buffer, size_t size);
 size_t readData(int fd, void* buffer, size_t size);
 
-void manageReads(fd_set* activeFileDescriptors, 
-                 struct timeval* timeout, 
-                 bool* quit,
-                 DataReceivedCallback onDataReceived, 
-                 TimeoutCallback onTimeout,
-                 LoggerPointer logger);
+void manageReads(const fd_set* activeFileDescriptors, 
+                 const struct timeval* timeout, 
+                 const bool* quit,
+                 const DataReceivedCallback onDataReceived, 
+                 const TimeoutCallback onTimeout,
+                 const LoggerPointer logger);
 
 #endif
