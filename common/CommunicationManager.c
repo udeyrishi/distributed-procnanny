@@ -98,15 +98,22 @@ size_t readData(int fd, void* buffer, size_t size)
 void manageReads(fd_set* activeFileDescriptors, 
                  struct timeval* timeout, 
                  bool* quit,
-                 DataReceivedCallback dataReceivedCallback, 
+                 DataReceivedCallback onDataReceived, 
+                 TimeoutCallback onTimeout,
                  LoggerPointer logger)
 {
     while (!(*quit))
     {
+        // Need copying after every select call because select may modify the timeout value
+        struct timeval timeoutCopy = *timeout;
+        // Need copying because the caller may change in the activeFileDescriptors in the dataReceivedCallback
+        // That change will only appear in the next iteration
         fd_set readFileDescriptors = *activeFileDescriptors;
-        if (select(FD_SETSIZE, &readFileDescriptors, NULL, NULL, timeout) < 0)
+
+        int numReady = select(FD_SETSIZE, &readFileDescriptors, NULL, NULL, &timeoutCopy);
+        if (numReady < 0)
         {
-            // select return negative value is a signal was received
+            // select return negative value is a signal was received -- no error in this case
             if (quit)
             {
                 return;
@@ -117,13 +124,25 @@ void manageReads(fd_set* activeFileDescriptors,
             logger(report, false);
             exit(-1);
         }
-
-        int i;
-        for (i = 0; i < FD_SETSIZE; ++i)
+        else if (numReady == 0)
         {
-            if (FD_ISSET(i, &readFileDescriptors))
+            if (onTimeout != NULL)
             {
-                dataReceivedCallback(i);
+                onTimeout();
+            }
+        }
+        else
+        {
+            if (onDataReceived != NULL)
+            {
+                int i;
+                for (i = 0; i < FD_SETSIZE; ++i)
+                {
+                    if (FD_ISSET(i, &readFileDescriptors))
+                    {
+                        onDataReceived(i);
+                    }
+                }
             }
         }
     }

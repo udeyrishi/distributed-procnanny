@@ -193,7 +193,7 @@ void createServer(uint16_t port, int argc, char** argv)
     makeServerSocket(port);
     FD_ZERO (&activeSockets);
     FD_SET (masterSocket, &activeSockets);
-    manageReads(&activeSockets, NULL, &sigintReceived, dataReceivedCallback, logger);    
+    manageReads(&activeSockets, NULL, &sigintReceived, dataReceivedCallback, NULL, logger);    
     destroyGlobals();
     closeSockets();
 }

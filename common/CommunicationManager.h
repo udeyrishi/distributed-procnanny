@@ -9,6 +9,7 @@
 
 // This should drain all the data from fd
 typedef void (* DataReceivedCallback)(int fd);
+typedef void (* TimeoutCallback)(void);
 
 uint32_t readUInt(int sock);
 void writeUInt(int sock, uint32_t num);
@@ -22,7 +23,8 @@ size_t readData(int fd, void* buffer, size_t size);
 void manageReads(fd_set* activeFileDescriptors, 
                  struct timeval* timeout, 
                  bool* quit,
-                 DataReceivedCallback dataReceivedCallback, 
+                 DataReceivedCallback onDataReceived, 
+                 TimeoutCallback onTimeout,
                  LoggerPointer logger);
 
 #endif
