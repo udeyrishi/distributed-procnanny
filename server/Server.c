@@ -7,6 +7,7 @@
 #include "MonitorRequest.h"
 #include <assert.h>
 #include "Utils.h"
+#include "ServerMessage.h"
 #include "memwatch.h"
 
 #define MAX_CONNECTIONS 5
@@ -14,15 +15,17 @@
 int masterSocket = -1;
 fd_set activeSockets;
 MonitorRequest** monitorRequests = NULL;
+const char* configLocation = NULL;
 int configLength = -1;
 bool sigintReceived = false;
+bool sighupReceived = false;
 
-void rereadConfig(const char* configPath)
+void rereadConfig()
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
     monitorRequests = NULL;
     configLength = 0;
-    configLength = getProcessesToMonitor(configPath, &monitorRequests, logger);
+    configLength = getProcessesToMonitor(configLocation, &monitorRequests, logger);
 
     if (configLength < 0)
     {
@@ -97,27 +100,6 @@ void makeServerSocket(uint16_t port)
 }
 
 // private
-bool sendConfigToClient(int sock)
-{
-    assert(configLength >= 0);
-    if (!writeUInt(sock, (uint32_t)configLength, logger))
-    {
-        return false;
-    }
-    int i;
-    for (i = 0; i < configLength; ++i)
-    {
-        if (!(writeString(sock, monitorRequests[i]->processName, logger) && 
-              writeUInt(sock, monitorRequests[i]->monitorDuration, logger)))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// private
 void registerNewClient()
 {
     struct sockaddr_in client;
@@ -133,13 +115,9 @@ void registerNewClient()
         exit(-1);
     }
     FD_SET(clientSocket, &activeSockets);
-    if (!sendConfigToClient(clientSocket))
+    if (!sendConfig(clientSocket, configLength, monitorRequests, logger))
     {
-        LogReport report;
-        report.message =  stringNumberJoin("Failed to send config file to client at socket: ", clientSocket);
-        report.type = ERROR;
-        logger(report, false);
-        free(report.message);
+        exit(-1);
     }
 }
 
@@ -196,17 +174,53 @@ void sigintHandler(int signum)
     }
 }
 
+void sighupHandler(int signum)
+{
+    if (signum == SIGHUP)
+    {
+        sighupReceived = true;
+    }
+}
+
+void sendPendingWrites()
+{
+    if (sighupReceived)
+    {
+        sighupReceived = false;
+        rereadConfig();
+        int i;
+        for (i = 0; i < FD_SETSIZE; ++i)
+        {
+            if (i != masterSocket && FD_ISSET(i, &activeSockets))
+            {
+                // send with status. Either new config or SIGINT
+                ServerMessage message;
+                message.type = HUP;
+                message.configLength = configLength;
+                message.newConfig = monitorRequests;
+                if (!sendMessage(message, i, logger))
+                {
+                    exit(-1);
+                }
+            }
+        }
+
+    }
+}
+
 void createServer(uint16_t port, const char* configPath)
 {
     // setup
     signal(SIGINT, sigintHandler);
-    rereadConfig(configPath);
+    signal(SIGHUP, sighupHandler);
+    configLocation = configPath;
+    rereadConfig();
     makeServerSocket(port);
     FD_ZERO (&activeSockets);
     FD_SET (masterSocket, &activeSockets);
 
     // main loop
-    manageReads(&activeSockets, NULL, &sigintReceived, dataReceivedCallback, NULL, logger);    
+    manageReads(&activeSockets, NULL, &sigintReceived, &sighupReceived, sendPendingWrites, dataReceivedCallback, NULL, logger);    
 
     // teardown
     destroyGlobals();

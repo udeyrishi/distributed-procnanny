@@ -1,6 +1,8 @@
 #include "MonitorRequest.h"
 #include "Utils.h"
 #include "ProgramIO.h"
+#include "CommunicationManager.h"
+#include <assert.h>
 #include "memwatch.h"
 
 MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport)
@@ -86,4 +88,64 @@ int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorReque
     freeOutputFromProgram(config, configLines);
     *monitorRequests = requests;
     return configLines;
+}
+
+bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPointer logger)
+{
+    assert(configLength >= 0);
+    assert(newConfig != NULL);
+
+    if (!writeUInt(sock, (uint32_t)configLength, logger))
+    {
+        LogReport report;
+        report.message =  stringNumberJoin("Failed to send config file to client at socket: ", sock);
+        report.type = ERROR;
+        logger(report, false);
+        free(report.message);
+        return false;
+    }
+    int i;
+    for (i = 0; i < configLength; ++i)
+    {
+        if (!(writeString(sock, newConfig[i]->processName, logger) && 
+              writeUInt(sock, newConfig[i]->monitorDuration, logger)))
+        {
+            LogReport report;
+            report.message =  stringNumberJoin("Failed to send config file to client at socket: ", sock);
+            report.type = ERROR;
+            logger(report, false);
+            free(report.message);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger)
+{
+    int configLength = (int)readUInt(sock, logger);
+
+    *requestBuffer = (MonitorRequest**)malloc(sizeof(MonitorRequest*)*configLength);
+
+    LogReport error;
+    if (!checkMallocResult(*requestBuffer, &error))
+    {
+        logger(error, false);
+        return -1;
+    }
+
+    int i;
+    for (i = 0; i < configLength; ++i)
+    {
+        char* processName = readString(sock, logger);
+        unsigned long int monitorDuration = (unsigned long int)readUInt(sock, logger);
+        char* line = stringULongJoin(processName, monitorDuration);
+        free(processName);
+        processName = NULL;
+        (*requestBuffer)[i] = constructMonitorRequest(line, logger);
+        free(line);
+    }
+
+    return configLength;
 }

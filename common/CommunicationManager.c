@@ -110,12 +110,9 @@ size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
     return total;
 }
 
-void manageReads(const fd_set* activeFileDescriptors, 
-                 const struct timeval* timeout, 
-                 const bool* quit,
-                 const DataReceivedCallback onDataReceived, 
-                 const TimeoutCallback onTimeout,
-                 const LoggerPointer logger)
+
+// private
+struct timeval* copyTimeout(const struct timeval* timeout)
 {
     struct timeval* timeoutCopy;
     if (timeout == NULL)
@@ -126,6 +123,19 @@ void manageReads(const fd_set* activeFileDescriptors,
     {
         timeoutCopy = (struct timeval*)malloc(sizeof(struct timeval));
     }
+    return timeoutCopy;
+}
+
+void manageReads(const fd_set* activeFileDescriptors, 
+                 const struct timeval* timeout, 
+                 const bool* quit,
+                 const bool* pause,
+                 const PausedCallback onPaused,
+                 const DataReceivedCallback onDataReceived, 
+                 const TimeoutCallback onTimeout,
+                 const LoggerPointer logger)
+{
+    struct timeval* timeoutCopy = copyTimeout(timeout);
 
     while (!(*quit))
     {
@@ -142,15 +152,25 @@ void manageReads(const fd_set* activeFileDescriptors,
         if (numReady < 0)
         {
             // select return negative value is a signal was received -- no error in this case
-            if (quit)
+            if (*quit)
             {
                 break;
             }
-            LogReport report;
-            report.message = "Failed to wait on the read file descriptors using select";
-            report.type = ERROR;
-            logger(report, false);
-            exit(-1);
+            if (*pause)
+            {
+                if (onPaused != NULL)
+                {
+                    onPaused();
+                }
+            }
+            else
+            {
+                LogReport report;
+                report.message = "Failed to wait on the read file descriptors using select";
+                report.type = ERROR;
+                logger(report, false);
+                exit(-1);   
+            }
         }
         else if (numReady == 0)
         {

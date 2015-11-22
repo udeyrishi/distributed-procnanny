@@ -14,4 +14,7 @@ void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);
 int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorRequests, LoggerPointer saveLogReport);
 
+bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPointer logger);
+int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger);
+
 #endif
