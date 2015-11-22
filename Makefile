@@ -3,7 +3,14 @@ CFLAGS = -Wall -DMEMWATCH -DMW_STDIO
 
 INCLUDES = -Icommon
 
-SERVER_SRC = server/ServerMain.c server/Logging.c common/Utils.c common/Process.c common/ProgramIO.c common/memwatch.c
+SERVER_SRC = server/ServerMain.c \
+			 server/Logging.c \
+			 server/Server.c \
+			 common/Utils.c \
+			 common/Process.c \
+			 common/ProgramIO.c \
+			 common/Socket.c \
+			 common/memwatch.c
 SERVER_OBJS = $(SERVER_SRC:.c=.o)
 SERVER_TARGET = procnanny.server
 

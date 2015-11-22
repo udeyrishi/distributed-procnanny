@@ -219,7 +219,7 @@ void logParentInit()
     free(parentInfo.message);
 }
 
-char* getServerInfoMessage(int port)
+char* getServerInfoMessage(uint16_t port)
 {
     //PID 345 on node xyz, port 2309
     // Source: http://stackoverflow.com/questions/504810/how-do-i-find-the-current-machines-full-hostname-in-c-hostname-and-domain-info
@@ -239,7 +239,7 @@ char* getServerInfoMessage(int port)
     return c1;
 }
 
-char* getServerInfoLogFileMessage(int port)
+char* getServerInfoLogFileMessage(uint16_t port)
 {
     // NODE XYZ PID 345 PORT 2309
     char hostname[1025];
@@ -258,7 +258,7 @@ char* getServerInfoLogFileMessage(int port)
     return c1;
 }
 
-void logServerInfo(int port)
+void logServerInfo(uint16_t port)
 {
     logFlash();
 
