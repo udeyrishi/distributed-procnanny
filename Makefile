@@ -17,12 +17,28 @@ SERVER_SRC = server/ServerMain.c \
 SERVER_OBJS = $(SERVER_SRC:.c=.o)
 SERVER_TARGET = procnanny.server
 
-BINS = procnanny.client $(SERVER_TARGET) procnanny
+CLIENT_SRC = client/ClientMain.c \
+			 client/ProcessManager.c \
+			 client/RegisterEntry.c \
+			 common/Process.c \
+			 common/Utils.c \
+			 common/MonitorRequest.c \
+			 common/ProgramIO.c \
+			 common/CommunicationManager.c \
+			 common/memwatch.c
+CLIENT_OBJS = $(CLIENT_SRC:.c=.o)
+CLIENT_TARGET = procnanny.client
+
+BINS = $(CLIENT_TARGET) $(SERVER_TARGET)
 OBJECT_FILES = *.o *~ server/*.o client/*.o common/*.o
 LOGS = $(PROCNANNYLOGS) $(PROCNANNYSERVERINFO) memwatch.log
 
-all:
-	$(CC) -Iclient -Icommon -Iserver $(CFLAGS) server/Logging.c client/ClientMain.c common/MonitorRequest.c client/Process.c client/ProcessManager.c common/ProgramIO.c client/RegisterEntry.c common/Utils.c common/memwatch.c -o procnanny
+default: all
+
+all: server client
+
+client: $(CLIENT_OBJS)
+	$(CC) $(INCLUDES) $(CFLAGS) -o $(CLIENT_TARGET) $(CLIENT_OBJS) 
 
 server: $(SERVER_OBJS)
 	$(CC) $(INCLUDES) $(CFLAGS) -o $(SERVER_TARGET) $(SERVER_OBJS)

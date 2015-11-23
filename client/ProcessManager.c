@@ -1,5 +1,5 @@
 #include "ProcessManager.h"
-#include "Logging.h"
+//#include "Logging.h"
 #include "Utils.h"
 #include "MonitorRequest.h"
 #include "RegisterEntry.h"
@@ -7,17 +7,23 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <assert.h>
+#include <unistd.h>
 #include "memwatch.h"
 
-MonitorRequest** monitorRequests = NULL;
-int configLength = 0;
-RegisterEntry* root = NULL;
+static MonitorRequest** monitorRequests = NULL;
+static int configLength = 0;
+static RegisterEntry* root = NULL;
 
-int writingToParent = 0;
-int readingFromParent = 0;
+static int writingToParent = 0;
+static int readingFromParent = 0;
 
-bool sigintReceived = false;
-bool readConfig = false;
+static bool sigintReceived = false;
+static bool sighupReceived = false;
+
+void logger(LogReport report, bool verbose)
+{
+    exit(-1);
+}
 
 //private
 void cleanupGlobals()
@@ -45,7 +51,7 @@ ProcessStatusCode childMain(pid_t pid, int duration)
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
     int num = 0;
-    Process** runningProcesses = searchRunningProcesses(&num, processName, false);
+    Process** runningProcesses = searchRunningProcesses(&num, processName, false, logger);
     if (runningProcesses == NULL)
     {
         // Nothing to be done
@@ -53,11 +59,13 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
         {
             if (!isRetry)
             {
+                /*
                 LogReport report;
                 report.message = stringJoin("No process found with name: ", processName);
                 report.type = INFO;
                 saveLogReport(report);
                 free(report.message);
+                */
             }
             
             return;
@@ -74,10 +82,12 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
         {
             // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that. 
             // Should never happen/be done.
+            /*
             LogReport report;
             report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
             report.type = WARNING;
             saveLogReport(report);
+            */
             continue;
         }
 
@@ -86,7 +96,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             continue;
         }
 
-        logProcessMonitoringInit(processName, p->pid);
+        //logProcessMonitoringInit(processName, p->pid);
 
         RegisterEntry* freeChild = getFirstFreeChild(head);
         if (freeChild == NULL)
@@ -97,11 +107,13 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             if (pipe(writeToChildFD) < 0)
             {
                 destroyProcessArray(runningProcesses, num);
+                /*
                 LogReport report;
                 report.message = "Pipe creation error when trying to monitor new process.";
                 report.type = ERROR;
                 saveLogReport(report);
                 printLogReport(report);
+                */
                 // TODO: Kill all children
                 // TODO: Log all final kill count
                 exit(-1);
@@ -110,11 +122,13 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             if (pipe(readFromChildFD) < 0)
             {
                 destroyProcessArray(runningProcesses, num);
+                /*
                 LogReport report;
                 report.message = "Pipe creation error when trying to monitor new process.";
                 report.type = ERROR;
                 saveLogReport(report);
                 printLogReport(report);
+                */
                 // TODO: Kill all children
                 // TODO: Log all final kill count
                 exit(-1);
@@ -187,6 +201,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
 }
 
 //private
+/*
 void rereadConfig(int argc, char** argv)
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
@@ -215,30 +230,31 @@ void sighupHandler(int signum)
 {
     if (signum == SIGHUP)
     {
-        readConfig = true;
+        sighupReceived = true;
     }
 }
+*/
 
 int monitor(int refreshRate, int argc, char** argv)
 {
-    signal(SIGINT, sigintHandler);
-    signal(SIGHUP, sighupHandler);
+    //signal(SIGINT, sigintHandler);
+    //signal(SIGHUP, sighupHandler);
 
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;
     
     int killCount = 0;
-    rereadConfig(argc, argv);
+    //rereadConfig(argc, argv);
     bool isRetry = false;
 
     while (!sigintReceived)
     {
-        if (readConfig)
+        if (sighupReceived)
         {
-            logSighupCatch(argv[1]);
-            readConfig = false;
+            //logSighupCatch(argv[1]);
+            sighupReceived = false;
             isRetry = false;
-            rereadConfig(argc, argv);
+            //rereadConfig(argc, argv);
         }
 
         killCount += refreshRegisterEntries(root);

@@ -85,23 +85,25 @@ int refreshRegisterEntries(RegisterEntry* head)
             ProcessStatusCode message;
             assert(read(head->readFromChildFD, &message, 1) == 1);
 
-            LogReport report;
+            //LogReport report;
             switch(message)
             {
                 case DIED:
-                    logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    //logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
                     break;
 
                 case KILLED:
                     ++killed;
-                    logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    //logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
                     break;
 
                 case FAILED:
+                    /*
                     report.message = stringNumberJoin("Failed to kill process with PID: ", (int)head->monitoredProcess);
                     report.type = ERROR;
                     saveLogReport(report);
                     free(report.message);
+                    */
                     break;
 
                 default:
