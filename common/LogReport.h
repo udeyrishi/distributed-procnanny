@@ -13,4 +13,7 @@ typedef struct
 
 typedef void (*LoggerPointer)(LogReport, bool);
 
+char* getFormattedReport(LogReport report);
+void printLogReport(LogReport report);
+
 #endif

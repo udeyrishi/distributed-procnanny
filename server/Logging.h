@@ -7,7 +7,6 @@
 #include "LogReport.h"
 
 void saveLogReport(LogReport message);
-void printLogReport(LogReport report);
 void logFinalServerReport(Client* root);
 //void logFinalReport(int killCount); // different form though
 void logParentInit(); // rename to client init

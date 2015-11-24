@@ -1,67 +1,13 @@
-#include <stdio.h>
 #include <stdbool.h>
 #include "Logging.h"
 #include "Utils.h"
-#include <time.h>
 #include <string.h>
+#include <stdio.h>
 #include "memwatch.h"
 
 const char* LOGFILE_ENV_VAR = "PROCNANNYLOGS";
 const char* SERVER_INFO_LOGFILE_ENV_VAR = "PROCNANNYSERVERINFO";
 const char* LOGFILE_FLASH = "\n===================PROCNANNY v2.0, Udey Rishi===================";
-
-// private
-char* getTime()
-{
-    char* output;
-    time_t rawtime;
-    time (&rawtime);
-    char* t = ctime(&rawtime);
-    t[strlen(t) - 1] = '\0';
-    output = stringJoin("[", t);
-    char* output2 = stringJoin(output, "] ");
-    free(output);
-    return output2;
-}
-
-// private
-char* getFormattedReport(LogReport report)
-{
-    char* output;
-    char* currentTime = getTime();
-    switch(report.type)
-    {
-        case ERROR:
-            output = stringJoin(currentTime, "Error: ");
-            break;
-        case WARNING:
-            output = stringJoin(currentTime, "Warning: ");
-            break;
-        case ACTION:
-            output = stringJoin(currentTime, "Action: ");
-            break;
-        case FATAL:
-            output = stringJoin(currentTime, "Fatal: ");
-            break;
-        case INFO:
-            output = stringJoin(currentTime, "Info: ");
-            break;
-        case DEBUG:
-            output = stringJoin(currentTime, "Debug: ");
-            break;
-        case SERVER_INFO:
-            output = stringJoin(currentTime, "procnanny server: ");
-            break;
-        default:
-            output = stringJoin(currentTime, "Unknown: ");
-            break;
-    } 
-    free(currentTime);
-    currentTime = NULL;
-    char* output2 = stringJoin(output, report.message);
-    free(output);
-    return output2;
-}
 
 bool appendToFile(const char* path, const char* string)
 {
@@ -96,13 +42,6 @@ void saveLogReport(LogReport report)
     {
         appendToFile(logFile, output);
     }
-    free(output);
-}
-
-void printLogReport(LogReport report)
-{
-    char* output = getFormattedReport(report);
-    printf("%s\n", output);
     free(output);
 }
 

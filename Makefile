@@ -10,7 +10,7 @@ SERVER_SRC = server/ServerMain.c \
 			 common/Utils.c \
 			 common/Process.c \
 			 common/ProgramIO.c \
-			 common/Socket.c \
+			 common/LogReport.c \
 			 common/MonitorRequest.c \
 			 common/CommunicationManager.c \
 			 common/ServerMessage.c \
@@ -22,8 +22,10 @@ SERVER_TARGET = procnanny.server
 CLIENT_SRC = client/ClientMain.c \
 			 client/ProcessManager.c \
 			 client/RegisterEntry.c \
+			 client/Client.c \
 			 common/Process.c \
 			 common/Utils.c \
+			 common/LogReport.c \
 			 common/MonitorRequest.c \
 			 common/ProgramIO.c \
 			 common/CommunicationManager.c \

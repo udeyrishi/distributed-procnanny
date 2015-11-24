@@ -1,5 +1,6 @@
 #include "ProcessManager.h"
 //#include "Logging.h"
+#include "Client.h"
 #include "Utils.h"
 #include "MonitorRequest.h"
 #include "RegisterEntry.h"
@@ -19,11 +20,6 @@ static int readingFromParent = 0;
 
 static bool sigintReceived = false;
 static bool sighupReceived = false;
-
-void logger(LogReport report, bool verbose)
-{
-    exit(-1);
-}
 
 //private
 void cleanupGlobals()

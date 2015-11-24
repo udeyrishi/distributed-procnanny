@@ -1,5 +1,4 @@
 #include "Server.h"
-#include "Socket.h"
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <signal.h>
@@ -53,6 +52,20 @@ void logger(LogReport report, bool verbose)
     {
         printLogReport(report);
     }
+}
+
+int createNewInternetSocket(LoggerPointer saveLogReport)
+{
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+    {
+        LogReport report;
+        report.message = "Failed to create a new socket.";
+        report.type = ERROR;
+        saveLogReport(report, false);
+    }
+
+    return sock;
 }
 
 //private
