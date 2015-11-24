@@ -20,13 +20,11 @@ void addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger
     newClient->nextClient = NULL;
     newClient->finalKillCount = (uint32_t)0;
 
-    // Source: http://stackoverflow.com/questions/10236204/how-to-get-the-name-of-the-client-when-receiving-an-http-request
-    struct hostent *hostName;
-    struct in_addr ipv4addr;
-
-    inet_pton(AF_INET, inet_ntoa(client->sin_addr), &ipv4addr);
-    hostName = gethostbyaddr(&ipv4addr, sizeof(ipv4addr), AF_INET);
-    newClient->hostName = copyString(hostName->h_name);
+    // Source: http://beej.us/guide/bgnet/output/html/multipage/getnameinfoman.html
+    char hostName[1024]; // good enough
+    char service[20]; // don't care
+    getnameinfo((struct sockaddr*)client, sizeof(struct sockaddr_in), hostName, sizeof(hostName), service, sizeof(service), 0);
+    newClient->hostName = copyString(hostName);
 
     if (tailClient == NULL)
     {
@@ -45,6 +43,7 @@ void cleanupClientChain()
     while (rootClient != NULL)
     {
         Client* temp = rootClient-> nextClient;
+        free(rootClient->hostName);
         free(rootClient);
         rootClient = temp;
     }
