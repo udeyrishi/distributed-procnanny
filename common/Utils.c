@@ -27,22 +27,11 @@ char* stringJoin(const char* first, const char* second)
     {
         return (char*)NULL;
     }
-    
-    char* temp = (char*)malloc(sizeof(char)*(len1 + 3));
-    if (!checkMallocResult(temp, &report))
-    {
-    	free(joined);
-        return (char*)NULL;
-    }
 
-    strcpy(temp, first);
-    temp[len1] = '%';
-    temp[len1 + 1] = 's';
-    temp[len1 + 2] = '\0';
-
-    int n = sprintf(joined, temp, second);
-    assert(n + 1 == sizeBuffer);
-    free(temp);
+    strncpy(joined, first, len1);
+    strncpy(joined+len1, second, len2);
+    joined[len1 + len2] = '\0';
+    assert(strlen(joined) + 1 == sizeBuffer);
     return joined;
 }
 

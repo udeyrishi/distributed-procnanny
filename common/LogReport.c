@@ -10,7 +10,7 @@ char* getTime()
 {
     char* output;
     time_t rawtime;
-    time (&rawtime);
+    time(&rawtime);
     char* t = ctime(&rawtime);
     t[strlen(t) - 1] = '\0';
     output = stringJoin("[", t);
