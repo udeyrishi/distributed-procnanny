@@ -34,24 +34,42 @@ CLIENT_OBJS = $(CLIENT_SRC:.c=.o)
 CLIENT_TARGET = procnanny.client
 
 BINS = $(CLIENT_TARGET) $(SERVER_TARGET)
-OBJECT_FILES = *.o *~ server/*.o client/*.o common/*.o
+SERVER_OBJECT_FILES = server/*.o common/*.o
+CLIENT_OBJECT_FILES = client/*.i common/*.o
+OTHER_OBJECT_FILES = *.o *~
+OBJECT_FILES = $(OTHER_OBJECT_FILES) $(SERVER_OBJECT_FILES) $(CLIENT_OBJECT_FILES)
 LOGS = $(PROCNANNYLOGS) $(PROCNANNYSERVERINFO) memwatch.log
 
 default: all
 
-all: server client
+all: client server
 
-client: $(CLIENT_OBJS)
+client: $(CLIENT_TARGET)
+
+$(CLIENT_TARGET): $(CLIENT_OBJS)
 	$(CC) $(INCLUDES) $(CFLAGS) -o $(CLIENT_TARGET) $(CLIENT_OBJS) 
 
-server: $(SERVER_OBJS)
+server: $(SERVER_TARGET)
+
+$(SERVER_TARGET): $(SERVER_OBJS)
 	$(CC) $(INCLUDES) $(CFLAGS) -o $(SERVER_TARGET) $(SERVER_OBJS)
 
 .c.o:
 	$(CC) $(INCLUDES) $(CFLAGS) -c $<  -o $@
 
-clean-log:
+clean-server:
+	$(RM) $(SERVER_TARGET) $(SERVER_OBJECT_FILES)
+
+clean-client:
+	$(RM) $(CLIENT_TARGET) $(CLIENT_OBJECT_FILES)
+
+clean-all:
 	$(RM) $(BINS) $(OBJECT_FILES) $(LOGS)
 
+clean-logs:
+	$(RM) $(LOGS)
+	
 clean:
 	$(RM) $(BINS) $(OBJECT_FILES)
+
+rebuild: clean-all all
