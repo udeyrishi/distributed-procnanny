@@ -58,14 +58,22 @@ bool writeString(int fd, char* string, LoggerPointer logger)
 
 // Source: https://eclass.srv.ualberta.ca/mod/resource/view.php?id=1766878
 // Jim Frost tutorial
-size_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
+ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
 {
+    if (size > (size_t)SSIZE_MAX)
+    {
+        LogReport report;
+        report.message = "size can't be bigger than SSIZE_MAX";
+        report.type = DEBUG;
+        logger(report, false);
+        exit(-1);
+    }
     size_t total = 0;
 
     while (total < size)
     {
-        size_t thisTime;
-        if ((thisTime = write(fd, buffer, size - total)) < 0)
+        ssize_t thisTime = write(fd, buffer, size - total);
+        if (thisTime < 0)
         {
             LogReport report;
             report.message = stringNumberJoin("Write failed to fd: ", fd);
@@ -76,22 +84,31 @@ size_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
         }
         else
         {
-            total += thisTime;
-            buffer += thisTime;
+            total += (size_t)thisTime;
+            buffer += (size_t)thisTime;
         }
     }
 
-    return total;
+    return (ssize_t)total;
 }
 
-size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
+ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
 { 
+    if (size > (size_t)SSIZE_MAX)
+    {
+        LogReport report;
+        report.message = "size can't be bigger than SSIZE_MAX";
+        report.type = DEBUG;
+        logger(report, false);
+        exit(-1);
+    }
+    
     size_t total = 0;
 
     while (total < size)
     {
-        size_t thisTime;
-        if ((thisTime = read(fd, buffer, size - total)) < 0)
+        ssize_t thisTime = read(fd, buffer, size - total);
+        if (thisTime < 0)
         {
             LogReport error;
             error.message = stringNumberJoin("Reading data failed from fd: ", fd);
@@ -102,12 +119,12 @@ size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
         }
         else
         {
-            total += thisTime;
-            buffer += thisTime;
+            total += (size_t)thisTime;
+            buffer += (size_t)thisTime;
         }
     }
 
-    return total;
+    return (ssize_t)total;
 }
 
 

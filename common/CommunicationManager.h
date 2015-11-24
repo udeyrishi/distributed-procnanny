@@ -18,8 +18,8 @@ bool writeUInt(int sock, uint32_t num, LoggerPointer logger);
 char* readString(int fd, LoggerPointer logger);
 bool writeString(int fd, char* string, LoggerPointer logger);
 
-size_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger);
-size_t readData(int fd, void* buffer, size_t size, LoggerPointer logger);
+ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger);
+ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger);
 
 void manageReads(const fd_set* activeFileDescriptors, 
                  const struct timeval* timeout, 
