@@ -1,6 +1,7 @@
 *.log
 *.out
 *.o
+*.info
 procnanny
 procnanny.server
 procnanny.client

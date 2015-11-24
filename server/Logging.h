@@ -3,10 +3,12 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include "Client.h"
 #include "LogReport.h"
 
 void saveLogReport(LogReport message);
 void printLogReport(LogReport report);
+void logFinalServerReport(Client* root);
 //void logFinalReport(int killCount); // different form though
 void logParentInit(); // rename to client init
 void logServerInfo(uint16_t port);

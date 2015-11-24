@@ -9,12 +9,14 @@
 #include <assert.h>
 #include "Utils.h"
 #include "ServerMessage.h"
+#include "Client.h"
 #include "memwatch.h"
 
 #define MAX_CONNECTIONS 5
 
 int masterSocket = -1;
 fd_set activeSockets;
+
 MonitorRequest** monitorRequests = NULL;
 const char* configLocation = NULL;
 int configLength = -1;
@@ -41,6 +43,7 @@ void destroyGlobals()
     destroyMonitorRequestArray(monitorRequests, configLength);
     configLength = -1;
     monitorRequests = NULL;
+    cleanupClientChain();
 }
 
 void logger(LogReport report, bool verbose)
@@ -106,6 +109,9 @@ void registerNewClient()
     struct sockaddr_in client;
     size_t size = sizeof(client);
     int clientSocket = accept(masterSocket, (struct sockaddr *)&client, &size);
+
+    addClient(&client, clientSocket, logger);
+
     if (clientSocket < 0)
     {
         LogReport report;
@@ -125,18 +131,7 @@ void registerNewClient()
 //private
 void logClientMessage(int sock)
 {
-    LogReport report;
-    report.message = readString(sock, logger);
-    if (report.message < 0)
-    {
-        exit(-1);
-    }
-    size_t size = readData(sock, (char *)&(report.type), sizeof(report.type), logger);
-    if (size < 0)
-    {
-        exit(-1);
-    }
-    assert(size == sizeof(report.type));
+    LogReport report = readLogMessage(sock, logger);
     logger(report, false);
     free(report.message);
 }
@@ -163,39 +158,33 @@ void dataReceivedCallback(int sock)
     }
 }
 
-void sendSigintToClients()
+void sendSigintAndUpdateKillCount(Client* client)
 {
-    int i;
-    for (i = 0; i < FD_SETSIZE; ++i)
+    ServerMessage intMessage;
+    intMessage.type = INT;
+    if (!sendMessage(intMessage, client->sock, logger))
     {
-        if (i != masterSocket && FD_ISSET(i, &activeSockets))
-        {
-            ServerMessage intMessage;
-            intMessage.type = INT;
-            if (!sendMessage(intMessage, i, logger))
-            {
-                exit(-1);
-            }
+        exit(-1);
+    }
 
-            // clear up any pending LOG_MESSAGES that might have been generated in this time
-            char messageCode;
-            for (messageCode = readClientMessageStatusCode(i, logger); 
-                 messageCode == LOG_MESSAGE; 
-                 messageCode = readClientMessageStatusCode(i, logger))
-            {
-                logClientMessage(i);
-            }
+    // clear up any pending LOG_MESSAGES that might have been generated in this time
+    char messageCode;
+    for (messageCode = readClientMessageStatusCode(client->sock, logger); 
+         messageCode == LOG_MESSAGE; 
+         messageCode = readClientMessageStatusCode(client->sock, logger))
+    {
+        logClientMessage(client->sock);
+    }
 
-            if (messageCode == INT_ACK)
-            {
-                close(i);
-            }
-            else
-            {
-                logUnexpectedClientMessageCode(i, messageCode);
-                exit(-1);
-            }
-        }
+    if (messageCode == INT_ACK)
+    {
+        client->finalKillCount = readUInt(client->sock, logger);
+        close(client->sock);
+    }
+    else
+    {
+        logUnexpectedClientMessageCode(client->sock, messageCode);
+        exit(-1);
     }
 }
 
@@ -216,29 +205,25 @@ void sighupHandler(int signum)
     }
 }
 
+void sendHupMessage(Client* client)
+{
+    ServerMessage message;
+    message.type = HUP;
+    message.configLength = configLength;
+    message.newConfig = monitorRequests;
+    if (!sendMessage(message, client->sock, logger))
+    {
+        exit(-1);
+    }
+}
+
 void sendPendingWrites()
 {
     if (sighupReceived)
     {
         sighupReceived = false;
         rereadConfig();
-        int i;
-        for (i = 0; i < FD_SETSIZE; ++i)
-        {
-            if (i != masterSocket && FD_ISSET(i, &activeSockets))
-            {
-                // send with status. Either new config or SIGINT
-                ServerMessage message;
-                message.type = HUP;
-                message.configLength = configLength;
-                message.newConfig = monitorRequests;
-                if (!sendMessage(message, i, logger))
-                {
-                    exit(-1);
-                }
-            }
-        }
-
+        forEachClient(sendHupMessage);
     }
 }
 
@@ -257,7 +242,8 @@ void createServer(uint16_t port, const char* configPath)
     manageReads(&activeSockets, NULL, &sigintReceived, &sighupReceived, sendPendingWrites, dataReceivedCallback, NULL, logger);    
 
     // teardown
-    destroyGlobals();
     close(masterSocket);
-    sendSigintToClients();
+    forEachClient(sendSigintAndUpdateKillCount);
+    logFinalServerReport(getRootClient());
+    destroyGlobals();
 }

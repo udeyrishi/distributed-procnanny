@@ -14,3 +14,20 @@ char readClientMessageStatusCode(int sock, LoggerPointer logger)
     assert(oneByte == sizeof(char));
     return messageCode;
 }
+
+LogReport readLogMessage(int sock, LoggerPointer logger)
+{
+    LogReport report;
+    report.message = readString(sock, logger);
+    if (report.message < 0)
+    {
+        exit(-1);
+    }
+    size_t size = readData(sock, (char *)&(report.type), sizeof(report.type), logger);
+    if (size < 0)
+    {
+        exit(-1);
+    }
+    assert(size == sizeof(report.type));
+    return report;
+}

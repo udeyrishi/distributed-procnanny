@@ -7,5 +7,5 @@
 #define INT_ACK (char)0xFFFE
 
 char readClientMessageStatusCode(int sock, LoggerPointer logger);
-
+LogReport readLogMessage(int sock, LoggerPointer logger);
 #endif
