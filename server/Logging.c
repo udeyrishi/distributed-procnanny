@@ -285,3 +285,18 @@ void logServerInfo(uint16_t port)
         free(c);
     }
 }
+
+void logUnexpectedClientMessageCode(int sock, char messageCode)
+{
+    LogReport report;
+    report.type = DEBUG;
+    char* c = stringNumberJoin("Non-LogReport message was sent by client, when nothing else was expected. Client: ", sock);
+    char* c2 = stringJoin(c, ", code: ");
+    free(c);
+    c = NULL;
+    report.message = stringNumberJoin(c2, (int)messageCode);
+    free(c2);
+    c2 = NULL;
+    saveLogReport(report);
+    free(report.message);
+}

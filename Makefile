@@ -13,6 +13,7 @@ SERVER_SRC = server/ServerMain.c \
 			 common/MonitorRequest.c \
 			 common/CommunicationManager.c \
 			 common/ServerMessage.c \
+			 common/ClientMessage.c \
 			 common/memwatch.c
 SERVER_OBJS = $(SERVER_SRC:.c=.o)
 SERVER_TARGET = procnanny.server

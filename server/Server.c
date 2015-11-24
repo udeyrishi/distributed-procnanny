@@ -5,6 +5,7 @@
 #include <signal.h>
 #include "CommunicationManager.h"
 #include "MonitorRequest.h"
+#include "ClientMessage.h"
 #include <assert.h>
 #include "Utils.h"
 #include "ServerMessage.h"
@@ -149,18 +150,51 @@ void dataReceivedCallback(int sock)
     }
     else
     {
-        logClientMessage(sock);
+        char messageCode = readClientMessageStatusCode(sock, logger);
+        if (messageCode == LOG_MESSAGE)
+        {
+            logClientMessage(sock);
+        }
+        else
+        {
+            logUnexpectedClientMessageCode(sock, messageCode);
+            exit(-1);
+        }
     }
 }
 
-void closeSockets()
+void sendSigintToClients()
 {
     int i;
     for (i = 0; i < FD_SETSIZE; ++i)
     {
-        if (FD_ISSET(i, &activeSockets))
+        if (i != masterSocket && FD_ISSET(i, &activeSockets))
         {
-            close(i);
+            ServerMessage intMessage;
+            intMessage.type = INT;
+            if (!sendMessage(intMessage, i, logger))
+            {
+                exit(-1);
+            }
+
+            // clear up any pending LOG_MESSAGES that might have been generated in this time
+            char messageCode;
+            for (messageCode = readClientMessageStatusCode(i, logger); 
+                 messageCode == LOG_MESSAGE; 
+                 messageCode = readClientMessageStatusCode(i, logger))
+            {
+                logClientMessage(i);
+            }
+
+            if (messageCode == INT_ACK)
+            {
+                close(i);
+            }
+            else
+            {
+                logUnexpectedClientMessageCode(i, messageCode);
+                exit(-1);
+            }
         }
     }
 }
@@ -224,5 +258,6 @@ void createServer(uint16_t port, const char* configPath)
 
     // teardown
     destroyGlobals();
-    closeSockets();
+    close(masterSocket);
+    sendSigintToClients();
 }
