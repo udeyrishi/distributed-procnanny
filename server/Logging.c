@@ -172,47 +172,48 @@ void logFinalServerReport(Client* root)
 {
     LogReport report;
     report.type = INFO;
-    char* rootMessage;
+    char* message;
     bool allocated = false;
 
     if (root == NULL)
     {
-        rootMessage = "Caught SIGINT. Exiting cleanly. No clients ever connected. Kill Count: 0";
+        message = "Caught SIGINT. Exiting cleanly. No clients ever connected. No processes killed";
     }
     else
     {
-        rootMessage = "Caught SIGINT. Exiting cleanly. Kill counts:";
+        message = "Caught SIGINT. Exiting cleanly. ";
         while (root != NULL)
         {
-            char* first = stringJoin(rootMessage, " (");
             if (allocated)
             {
-                free(rootMessage);
-                rootMessage = NULL;
+                char* temp = stringJoin(message, ", ");
+                free(message);
+                message = temp;
+            }
+            char* c1 = stringNumberJoin(message, root->finalKillCount);
+            if (allocated)
+            {
+                free(message);
             }
             else
             {
                 allocated = true;
             }
-            char* c = stringJoin(first, root->hostName);
-            free(first);
-            first = NULL;
-            char* c2 = stringJoin(c, ", ");
-            free(c);
-            c = stringULongJoin(c2, (unsigned long int)root->finalKillCount);
+            char* c2 = stringJoin(c1, " process(es) killed on node ");
+            free(c1);
+            c1 = stringJoin(c2, root->hostName);
             free(c2);
-            c2 = stringJoin(c, ") ;");
-            free(c);
-            rootMessage = c2;
+            message = c1;
             root = root->nextClient;
         }
     }
 
-    report.message = rootMessage;
-    saveLogReport(report);
-    printLogReport(report);
+    report.message = stringJoin(message, ".");
     if (allocated)
     {
-        free(rootMessage);
+        free(message);
     }
+    saveLogReport(report);
+    printLogReport(report);
+    free(report.message);
 }
