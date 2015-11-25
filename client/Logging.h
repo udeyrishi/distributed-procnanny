@@ -6,7 +6,7 @@
 #include "LogReport.h"
 
 void initializeLogger(int serverSocket);
-void saveLogReport(LogReport message, bool local);
+void saveLogReport(LogReport message, bool verbose);
 void logFinalReport(int killCount);
 //void logParentInit();
 void logProcessMonitoringInit(char* processName, pid_t pid);

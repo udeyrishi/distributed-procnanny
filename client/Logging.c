@@ -6,23 +6,30 @@ static int __serverSocket = -1;
 
 void initializeLogger(int serverSocket)
 {
-	__serverSocket = serverSocket;
+    __serverSocket = serverSocket;
 }
 
-void saveLogReport(LogReport message, bool local)
+void saveLogReport(LogReport message, bool verbose)
 {
-	if (local)
+    if (message.type == INFO || message.type == ACTION)
     {
-        printLogReport(message);
+        if (!writeClientMessageStatusCode(__serverSocket, LOG_MESSAGE, saveLogReport) ||
+            !writeLogMessage(__serverSocket, message, saveLogReport))
+        {
+            exit(-1);
+        }
+
+        if (verbose)
+        {
+            printLogReport(message);
+        }
     }
     else
     {
-    	if (!writeClientMessageStatusCode(__serverSocket, LOG_MESSAGE, saveLogReport) ||
-    	    !writeLogMessage(__serverSocket, message, saveLogReport))
-    	{
-    		exit(-1);
-    	}
+        // TODO: maybe this is not the behaviour
+        printLogReport(message);
     }
+
 }
 
 void logFinalReport(int killCount);
