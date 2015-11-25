@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <signal.h>
 #include <unistd.h>
+#include "Logging.h"
 #include "memwatch.h"
 
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
@@ -85,25 +86,23 @@ int refreshRegisterEntries(RegisterEntry* head)
             ProcessStatusCode message;
             assert(read(head->readFromChildFD, &message, 1) == 1);
 
-            //LogReport report;
+            LogReport report;
             switch(message)
             {
                 case DIED:
-                    //logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
                     break;
 
                 case KILLED:
                     ++killed;
-                    //logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
+                    logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
                     break;
 
                 case FAILED:
-                    /*
                     report.message = stringNumberJoin("Failed to kill process with PID: ", (int)head->monitoredProcess);
-                    report.type = ERROR;
-                    saveLogReport(report);
+                    report.type = INFO;
+                    saveLogReport(report, false);
                     free(report.message);
-                    */
                     break;
 
                 default:
@@ -143,7 +142,7 @@ RegisterEntry* getFirstFreeChild(RegisterEntry* head)
         {
             return head;
         }
-        else 
+        else
         {
             head = head->next;
         }

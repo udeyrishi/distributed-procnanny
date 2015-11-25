@@ -55,13 +55,11 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
         {
             if (!isRetry)
             {
-                /*
                 LogReport report;
                 report.message = stringJoin("No process found with name: ", processName);
                 report.type = INFO;
-                saveLogReport(report);
+                saveLogReport(report, false);
                 free(report.message);
-                */
             }
 
             return;
@@ -78,12 +76,10 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
         {
             // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that.
             // Should never happen/be done.
-            /*
             LogReport report;
             report.message = "Config file had procnanny as one of the entries. It will be ignored if no other procnanny is found.";
             report.type = WARNING;
-            saveLogReport(report);
-            */
+            saveLogReport(report, false);
             continue;
         }
 
@@ -92,7 +88,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             continue;
         }
 
-        //logProcessMonitoringInit(processName, p->pid);
+        logProcessMonitoringInit(processName, p->pid);
 
         RegisterEntry* freeChild = getFirstFreeChild(head);
         if (freeChild == NULL)
@@ -103,13 +99,10 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             if (pipe(writeToChildFD) < 0)
             {
                 destroyProcessArray(runningProcesses, num);
-                /*
                 LogReport report;
                 report.message = "Pipe creation error when trying to monitor new process.";
                 report.type = ERROR;
-                saveLogReport(report);
-                printLogReport(report);
-                */
+                saveLogReport(report, true);
                 // TODO: Kill all children
                 // TODO: Log all final kill count
                 exit(-1);
@@ -118,13 +111,10 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             if (pipe(readFromChildFD) < 0)
             {
                 destroyProcessArray(runningProcesses, num);
-                /*
                 LogReport report;
                 report.message = "Pipe creation error when trying to monitor new process.";
                 report.type = ERROR;
-                saveLogReport(report);
-                printLogReport(report);
-                */
+                saveLogReport(report, true);
                 // TODO: Kill all children
                 // TODO: Log all final kill count
                 exit(-1);

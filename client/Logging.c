@@ -14,7 +14,7 @@ void initializeLogger(int serverSocket)
 
 void saveLogReport(LogReport message, bool verbose)
 {
-    if (message.type == INFO || message.type == ACTION)
+    if (message.type == INFO || message.type == ACTION || message.type == WARNING)
     {
         if (!writeClientMessageStatusCode(__serverSocket, LOG_MESSAGE, saveLogReport) ||
             !writeLogMessage(__serverSocket, message, saveLogReport))
