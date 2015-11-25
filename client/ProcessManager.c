@@ -1,6 +1,5 @@
 #include "ProcessManager.h"
 #include "Logging.h"
-#include "Client.h"
 #include "Utils.h"
 #include "MonitorRequest.h"
 #include "RegisterEntry.h"
@@ -64,7 +63,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
                 free(report.message);
                 */
             }
-            
+
             return;
         }
         exit(-1);
@@ -77,7 +76,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
 
         if (p -> pid == getpid())
         {
-            // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that. 
+            // If procnannys were killed in the beginning, but a new one was started in between and the user expects to track that.
             // Should never happen/be done.
             /*
             LogReport report;
@@ -157,7 +156,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
                         targetPid = message.targetPid;
                         duration = message.monitorDuration;
                     }
-                    
+
                     break;
 
                 default:
@@ -206,7 +205,7 @@ int monitor(int refreshRate, int serverSocket)
 
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;
-    
+
     int killCount = 0;
     //rereadConfig(argc, argv);
     bool isRetry = false;

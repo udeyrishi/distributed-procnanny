@@ -8,12 +8,11 @@
 
 #define CHILD (pid_t)0
 
-typedef struct 
+typedef struct
 {
 	pid_t targetPid;
 	unsigned long int monitorDuration;
 } MonitorMessage;
 
-void logger(LogReport report, bool verbose);
 int monitor(int refreshRate, int serverSocket);
 #endif

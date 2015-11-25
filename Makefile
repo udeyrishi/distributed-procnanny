@@ -22,7 +22,7 @@ SERVER_TARGET = procnanny.server
 CLIENT_SRC = client/ClientMain.c \
 			 client/ProcessManager.c \
 			 client/RegisterEntry.c \
-			 client/Client.c \
+			 client/ClientSocket.c \
 			 client/Logging.c \
 			 common/Process.c \
 			 common/Utils.c \
@@ -37,7 +37,7 @@ CLIENT_TARGET = procnanny.client
 
 BINS = $(CLIENT_TARGET) $(SERVER_TARGET)
 SERVER_OBJECT_FILES = server/*.o common/*.o
-CLIENT_OBJECT_FILES = client/*.i common/*.o
+CLIENT_OBJECT_FILES = client/*.o common/*.o
 OTHER_OBJECT_FILES = *.o *~
 OBJECT_FILES = $(OTHER_OBJECT_FILES) $(SERVER_OBJECT_FILES) $(CLIENT_OBJECT_FILES)
 LOGS = $(PROCNANNYLOGS) $(PROCNANNYSERVERINFO) memwatch.log
@@ -49,7 +49,7 @@ all: client server
 client: $(CLIENT_TARGET)
 
 $(CLIENT_TARGET): $(CLIENT_OBJS)
-	$(CC) $(INCLUDES) $(CFLAGS) -o $(CLIENT_TARGET) $(CLIENT_OBJS) 
+	$(CC) $(INCLUDES) $(CFLAGS) -o $(CLIENT_TARGET) $(CLIENT_OBJS)
 
 server: $(SERVER_TARGET)
 
@@ -70,7 +70,7 @@ clean-all:
 
 clean-logs:
 	$(RM) $(LOGS)
-	
+
 clean:
 	$(RM) $(BINS) $(OBJECT_FILES)
 

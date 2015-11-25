@@ -1,4 +1,4 @@
-#include "Client.h"
+#include "ClientSocket.h"
 #include "Logging.h"
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -34,7 +34,7 @@ struct sockaddr_in getServerInfo(const struct hostent* host, int port)
 
 int connectToServer(int sock, const struct sockaddr* server, size_t size)
 {
-    if (connect(sock, server, size) < 0) 
+    if (connect(sock, server, size) < 0)
     {
         LogReport report;
         report.type = ERROR;
