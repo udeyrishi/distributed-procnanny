@@ -34,5 +34,6 @@ int main(int argc, char** argv)
 
     int killCount = monitor(REFRESH_RATE, sock);
     logFinalReport(killCount);
+    close(sock);
     return 0;
 }

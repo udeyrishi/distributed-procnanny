@@ -6,6 +6,16 @@
 #include "Logging.h"
 #include "memwatch.h"
 
+typedef bool (* RegisterEntryPredicate)(const RegisterEntry* regEntry);
+static int tempFD = -1;
+static RegisterEntry* head = NULL;
+
+RegisterEntry* initialiseRegister()
+{
+    head = constuctorRegisterEntry((pid_t)0, NULL, NULL);
+    return head;
+}
+
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next)
 {
     RegisterEntry* entry = (RegisterEntry*)malloc(sizeof(RegisterEntry));
@@ -36,91 +46,118 @@ RegisterEntry* destructorRegisterEntry(RegisterEntry* this)
     return next;
 }
 
-void destructChain(RegisterEntry* root)
+void destructChain()
 {
-    while (root != NULL)
+    while (head != NULL)
     {
-        root = destructorRegisterEntry(root);
+        head = destructorRegisterEntry(head);
     }
 }
 
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, unsigned long int* duration)
+bool isNull(RegisterEntry* this)
 {
-    while (reg != NULL)
+    return (this == NULL || this->monitoringProcess == (pid_t)0);
+}
+
+RegisterEntry* findFirstChildSatisfying(RegisterEntryPredicate predicate)
+{
+    RegisterEntry* this = head;
+    while (!isNull(this))
     {
-        if (reg->monitoringProcess == monitoringProcess)
+        if (predicate(this))
         {
-            Process* found = (Process*)malloc(sizeof(Process));
-            found->command = reg->monitoredName;
-            found->pid = reg->monitoredProcess;
-            *duration = reg->monitorDuration;
-            return found;
+            return this;
         }
         else
         {
-            reg = reg->next;
+            this = this->next;
         }
     }
+
     return NULL;
 }
 
-bool isHeadNull(RegisterEntry* head)
+bool isReadFDSameAsTempFD(const RegisterEntry* regEntry)
 {
-    return (head == NULL || head->monitoringProcess == (pid_t)0);
+    return regEntry->readFromChildFD == tempFD;
 }
 
-int refreshRegisterEntries(RegisterEntry* head)
+bool didChildKill(int readFromChildFD)
 {
-    int killed = 0;
+    ProcessStatusCode message;
+    assert(read(readFromChildFD, &message, sizeof(message)) == sizeof(message));
 
-    if (isHeadNull(head))
+    tempFD = readFromChildFD;
+    RegisterEntry* child = findFirstChildSatisfying(isReadFDSameAsTempFD);
+    tempFD = -1;
+
+    if (child == NULL)
     {
-        return killed;
+        LogReport report;
+        report.message = "Message received from child not in the register.";
+        report.type = DEBUG;
+        saveLogReport(report, false);
+        exit(-1);
     }
 
-    time_t currentTime = time(NULL);
-    while (head != NULL)
+    LogReport report;
+    bool result;
+    switch(message)
     {
-        if (!(head->isAvailable) && (currentTime > head->startingTime + head->monitorDuration))
+        case DIED:
+            logSelfDying(child->monitoredProcess, child->monitoredName, child->monitorDuration);
+            result = false;
+            break;
+
+        case KILLED:
+            logProcessKill(child->monitoredProcess, child->monitoredName, child->monitorDuration);
+            result = true;
+            break;
+
+        case FAILED:
+            report.message = stringNumberJoin("Failed to kill process with PID: ", (int)child->monitoredProcess);
+            report.type = INFO;
+            saveLogReport(report, false);
+            free(report.message);
+            result = false;
+            break;
+
+        default:
+            // TODO: UNEXPECTED
+            result = false;
+            break;
+    }
+
+    child->isAvailable = true;
+    return result;
+}
+
+int refreshRegisterEntries()
+{
+    int killed = 0;
+    time_t currentTime = time(NULL);
+
+    RegisterEntry* this = head;
+    while (!isNull(this))
+    {
+        if (!(this->isAvailable) && (currentTime > this->startingTime + this->monitorDuration))
         {
-            ProcessStatusCode message;
-            assert(read(head->readFromChildFD, &message, 1) == 1);
-
-            LogReport report;
-            switch(message)
+            if (didChildKill(this->readFromChildFD))
             {
-                case DIED:
-                    logSelfDying(head->monitoredProcess, head->monitoredName, head->monitorDuration);
-                    break;
-
-                case KILLED:
-                    ++killed;
-                    logProcessKill(head->monitoredProcess, head->monitoredName, head->monitorDuration);
-                    break;
-
-                case FAILED:
-                    report.message = stringNumberJoin("Failed to kill process with PID: ", (int)head->monitoredProcess);
-                    report.type = INFO;
-                    saveLogReport(report, false);
-                    free(report.message);
-                    break;
-
-                default:
-                    // TODO: UNEXPECTED
-                    break;
+                ++killed;
             }
-
-            head->isAvailable = true;
         }
-        head = head->next;
+        this = this->next;
     }
 
     return killed;
 }
 
-bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
+
+bool isProcessAlreadyBeingMonitored(pid_t pid)
 {
-    while (!isHeadNull(reg))
+    RegisterEntry* reg = head;
+    while (!isNull(reg))
     {
         if (reg->monitoredProcess == pid)
         {
@@ -134,26 +171,20 @@ bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg)
     return false;
 }
 
-RegisterEntry* getFirstFreeChild(RegisterEntry* head)
+bool isAvailable(const RegisterEntry* this)
 {
-    while (!isHeadNull(head))
-    {
-        if (head->isAvailable)
-        {
-            return head;
-        }
-        else
-        {
-            head = head->next;
-        }
-    }
-
-    return NULL;
+    return this->isAvailable;
 }
 
-void killAllChildren(RegisterEntry* root)
+RegisterEntry* getFirstFreeChild()
 {
-    while (!isHeadNull(root))
+    return findFirstChildSatisfying(isAvailable);
+}
+
+void killAllChildren()
+{
+    RegisterEntry* root = head;
+    while (!isNull(root))
     {
         close(root->writeToChildFD);
         close(root->readFromChildFD);

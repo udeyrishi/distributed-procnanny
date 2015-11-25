@@ -8,9 +8,12 @@
 #include <signal.h>
 #include <assert.h>
 #include <unistd.h>
+#include "ServerMessage.h"
+#include "CommunicationManager.h"
 #include "memwatch.h"
 
-static RegisterEntry* root = NULL;
+static int killCount  = 0;
+static RegisterEntry* tail = NULL;
 
 static int writingToParent = 0;
 static int readingFromParent = 0;
@@ -19,13 +22,15 @@ static MonitorRequest** monitorRequests = NULL;
 static int configLength = 0;
 
 static bool sigintReceived = false;
-static bool sighupReceived = false;
+
+static fd_set activeFds;
+static int serverSocket = -1;
 
 //private
 void cleanupGlobals()
 {
     destroyMonitorRequestArray(monitorRequests, configLength);
-    destructChain(root);
+    destructChain();
 }
 
 //private
@@ -44,7 +49,7 @@ ProcessStatusCode childMain(pid_t pid, int duration)
 }
 
 //private
-void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
+void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* tail)
 {
     int num = 0;
     Process** runningProcesses = searchRunningProcesses(&num, processName, false, saveLogReport);
@@ -83,14 +88,14 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
             continue;
         }
 
-        if (isProcessAlreadyBeingMonitored(p->pid, head))
+        if (isProcessAlreadyBeingMonitored(p->pid))
         {
             continue;
         }
 
         logProcessMonitoringInit(processName, p->pid);
 
-        RegisterEntry* freeChild = getFirstFreeChild(head);
+        RegisterEntry* freeChild = getFirstFreeChild();
         if (freeChild == NULL)
         {
             // fork a new child
@@ -161,6 +166,7 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
                     tail->isAvailable = false;
                     tail->writeToChildFD = writeToChildFD[1];
                     tail->readFromChildFD = readFromChildFD[0];
+                    FD_SET(tail->readFromChildFD, &activeFds);
                     tail->next = constuctorRegisterEntry((pid_t)0, NULL, NULL);
                     tail = tail->next;
                     break;
@@ -186,49 +192,85 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
     destroyProcessArray(runningProcesses, num);
 }
 
-//int monitor(int refreshRate, int argc, char** argv)
-int monitor(int refreshRate, int serverSocket)
+void refreshMonitoring(bool isRetry)
 {
-    //signal(SIGINT, sigintHandler);
-    //signal(SIGHUP, sighupHandler);
+    int i;
+    for (i = 0; i < configLength; ++i)
+    {
+        setupMonitoring(isRetry, monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, tail);
+        while(tail->next != NULL)
+        {
+            // Refresh tail
+            tail = tail->next;
+        }
+    }
+}
+
+void readMessageFromServer()
+{
+    ServerMessage message = readMessage(serverSocket, saveLogReport);
+
+    switch (message.type)
+    {
+        case HUP:
+            destroyMonitorRequestArray(monitorRequests, configLength);
+            configLength = message.configLength;
+            monitorRequests = message.newConfig;
+            refreshMonitoring(false);
+            break;
+
+        case INT:
+            sigintReceived = true;
+            break;
+
+        default:
+            // error already logged
+            exit(-1);
+    }
+}
+
+void dataReceivedCallback(int fd)
+{
+    if (fd == serverSocket)
+    {
+        readMessageFromServer();
+    }
+    else
+    {
+        if (didChildKill(fd))
+        {
+            ++killCount;
+        }
+    }
+}
+
+void timeoutCallback()
+{
+    refreshMonitoring(true);
+}
+
+int monitor(int refreshRate, int serverSock)
+{
+    serverSocket = serverSock;
+    FD_ZERO(&activeFds);
+    FD_SET(serverSocket, &activeFds);
+
     configLength = readConfig(serverSocket, &monitorRequests, saveLogReport);
 
-    root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
-    RegisterEntry* tail = root;
+    tail = initialiseRegister();
 
-    int killCount = 0;
-    //rereadConfig(argc, argv);
-    bool isRetry = false;
+    refreshMonitoring(false);
 
-    while (!sigintReceived)
-    {
-        if (sighupReceived)
-        {
-            //logSighupCatch(argv[1]);
-            sighupReceived = false;
-            isRetry = false;
-            //rereadConfig(argc, argv);
-        }
+    struct timeval timeout;
+    timeout.tv_sec = refreshRate;
+    timeout.tv_usec = 0;
 
-        killCount += refreshRegisterEntries(root);
-        int i;
-        for (i = 0; i < configLength; ++i)
-        {
-            setupMonitoring(isRetry, monitorRequests[i]->processName, monitorRequests[i]->monitorDuration, root, tail);
-            while(tail->next != NULL)
-            {
-                // Refresh tail
-                tail = tail->next;
-            }
-        }
-        sleep(refreshRate);
-        isRetry = true;
-    }
+    bool pause = false;
+    manageReads(&activeFds, &timeout, &sigintReceived, &pause, NULL, dataReceivedCallback, timeoutCallback, saveLogReport);
 
-    // Final refresh before exiting
-    killCount += refreshRegisterEntries(root);
+    killCount += refreshRegisterEntries();
 
-    killAllChildren(root);
+    killAllChildren();
     cleanupGlobals();
     return killCount;
 }

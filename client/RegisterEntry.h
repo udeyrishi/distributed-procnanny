@@ -27,12 +27,13 @@ typedef struct registerEntry
 	struct registerEntry* next;
 } RegisterEntry;
 
+RegisterEntry* initialiseRegister();
 RegisterEntry* constuctorRegisterEntry(pid_t monitoringProcess, Process* monitoredProcess, RegisterEntry* next);
 RegisterEntry* destructorRegisterEntry(RegisterEntry* this);
-void destructChain(RegisterEntry* root);
-Process* findMonitoredProcess(pid_t monitoringProcess, RegisterEntry* reg, unsigned long int* duration);
-int refreshRegisterEntries(RegisterEntry* head);
-bool isProcessAlreadyBeingMonitored(pid_t pid, RegisterEntry* reg);
-RegisterEntry* getFirstFreeChild(RegisterEntry* head);
-void killAllChildren(RegisterEntry* root);
+void destructChain();
+bool didChildKill(int readFromChildFD);
+int refreshRegisterEntries();
+bool isProcessAlreadyBeingMonitored(pid_t pid);
+RegisterEntry* getFirstFreeChild();
+void killAllChildren();
 #endif

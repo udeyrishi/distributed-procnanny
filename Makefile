@@ -30,6 +30,7 @@ CLIENT_SRC = client/ClientMain.c \
 			 common/MonitorRequest.c \
 			 common/ProgramIO.c \
 			 common/ClientMessage.c \
+			 common/ServerMessage.c \
 			 common/CommunicationManager.c \
 			 common/memwatch.c
 CLIENT_OBJS = $(CLIENT_SRC:.c=.o)

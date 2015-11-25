@@ -95,7 +95,7 @@ ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
 }
 
 ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
-{ 
+{
     if (size > (size_t)SSIZE_MAX)
     {
         LogReport report;
@@ -131,7 +131,7 @@ ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
 
 
 // private
-struct timeval* copyTimeout(const struct timeval* timeout)
+struct timeval* initTimeout(const struct timeval* timeout)
 {
     struct timeval* timeoutCopy;
     if (timeout == NULL)
@@ -145,16 +145,16 @@ struct timeval* copyTimeout(const struct timeval* timeout)
     return timeoutCopy;
 }
 
-void manageReads(const fd_set* activeFileDescriptors, 
-                 const struct timeval* timeout, 
+void manageReads(const fd_set* activeFileDescriptors,
+                 const struct timeval* timeout,
                  const bool* quit,
                  const bool* pause,
                  const PausedCallback onPaused,
-                 const DataReceivedCallback onDataReceived, 
+                 const DataReceivedCallback onDataReceived,
                  const TimeoutCallback onTimeout,
                  const LoggerPointer logger)
 {
-    struct timeval* timeoutCopy = copyTimeout(timeout);
+    struct timeval* timeoutCopy = initTimeout(timeout);
 
     while (!(*quit))
     {
@@ -188,7 +188,7 @@ void manageReads(const fd_set* activeFileDescriptors,
                 report.message = "Failed to wait on the read file descriptors using select";
                 report.type = ERROR;
                 logger(report, false);
-                exit(-1);   
+                exit(-1);
             }
         }
         else if (numReady == 0)

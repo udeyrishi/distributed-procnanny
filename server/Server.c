@@ -195,8 +195,8 @@ void sendSigintAndUpdateKillCount(Client* client)
 
     // clear up any pending LOG_MESSAGES that might have been generated in this time
     ClientMessageStatusCode messageCode;
-    for (messageCode = readClientMessageStatusCode(client->sock, logger); 
-         messageCode == LOG_MESSAGE; 
+    for (messageCode = readClientMessageStatusCode(client->sock, logger);
+         messageCode == LOG_MESSAGE;
          messageCode = readClientMessageStatusCode(client->sock, logger))
     {
         logClientMessage(client->sock);
@@ -216,7 +216,7 @@ void sendSigintAndUpdateKillCount(Client* client)
 
 //private
 void sigintHandler(int signum)
-{    
+{
     if (signum == SIGINT)
     {
         sigintReceived = true;
@@ -261,11 +261,11 @@ void createServer(uint16_t port, const char* configPath)
     configLocation = configPath;
     rereadConfig();
     makeServerSocket(port);
-    FD_ZERO (&activeSockets);
-    FD_SET (masterSocket, &activeSockets);
+    FD_ZERO(&activeSockets);
+    FD_SET(masterSocket, &activeSockets);
 
     // main loop
-    manageReads(&activeSockets, NULL, &sigintReceived, &sighupReceived, sendPendingWrites, dataReceivedCallback, NULL, logger);    
+    manageReads(&activeSockets, NULL, &sigintReceived, &sighupReceived, sendPendingWrites, dataReceivedCallback, NULL, logger);
 
     // teardown
     close(masterSocket);
