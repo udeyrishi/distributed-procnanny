@@ -53,7 +53,7 @@ int connectToServer(int sock, const struct sockaddr* server, size_t size)
         logger(report, true);
         return -1;
     }
-    return 0;
+    return sock;
 }
 
 int makeClientSocket(const char* hostName, int port)
