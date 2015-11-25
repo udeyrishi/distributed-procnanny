@@ -171,7 +171,7 @@ void dataReceivedCallback(int sock)
     }
     else
     {
-        char messageCode = readClientMessageStatusCode(sock, logger);
+        ClientMessageStatusCode messageCode = readClientMessageStatusCode(sock, logger);
         if (messageCode == LOG_MESSAGE)
         {
             logClientMessage(sock);
@@ -194,7 +194,7 @@ void sendSigintAndUpdateKillCount(Client* client)
     }
 
     // clear up any pending LOG_MESSAGES that might have been generated in this time
-    char messageCode;
+    ClientMessageStatusCode messageCode;
     for (messageCode = readClientMessageStatusCode(client->sock, logger); 
          messageCode == LOG_MESSAGE; 
          messageCode = readClientMessageStatusCode(client->sock, logger))

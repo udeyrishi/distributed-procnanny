@@ -1,5 +1,5 @@
 #include "ProcessManager.h"
-//#include "Logging.h"
+#include "Logging.h"
 #include "Client.h"
 #include "Utils.h"
 #include "MonitorRequest.h"
@@ -48,7 +48,7 @@ ProcessStatusCode childMain(pid_t pid, int duration)
 void setupMonitoring(bool isRetry, char* processName, unsigned long int duration, RegisterEntry* head, RegisterEntry* tail)
 {
     int num = 0;
-    Process** runningProcesses = searchRunningProcesses(&num, processName, false, logger);
+    Process** runningProcesses = searchRunningProcesses(&num, processName, false, saveLogReport);
     if (runningProcesses == NULL)
     {
         // Nothing to be done
@@ -202,7 +202,7 @@ int monitor(int refreshRate, int serverSocket)
 {
     //signal(SIGINT, sigintHandler);
     //signal(SIGHUP, sighupHandler);
-    configLength = readConfig(serverSocket, &monitorRequests, logger);
+    configLength = readConfig(serverSocket, &monitorRequests, saveLogReport);
 
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;

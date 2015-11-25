@@ -1,22 +1,11 @@
 #include "Client.h"
+#include "Logging.h"
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <strings.h>
 #include "memwatch.h"
-
-void logger(LogReport report, bool local)
-{
-    if (local)
-    {
-        printLogReport(report);
-    }
-    else
-    {
-        // TODO: send over network
-    }
-}
 
 int makeSocket()
 {
@@ -26,7 +15,7 @@ int makeSocket()
         LogReport report;
         report.type = ERROR;
         report.message = "Cannot open socket";
-        logger(report, true);
+        saveLogReport(report, true);
         return -1;
     }
     return sock;
@@ -50,7 +39,7 @@ int connectToServer(int sock, const struct sockaddr* server, size_t size)
         LogReport report;
         report.type = ERROR;
         report.message = "Cannot connect to server";
-        logger(report, true);
+        saveLogReport(report, true);
         return -1;
     }
     return sock;
@@ -70,7 +59,7 @@ int makeClientSocket(const char* hostName, int port)
         LogReport report;
         report.type = ERROR;
         report.message = "Cannot get host description";
-        logger(report, true);
+        saveLogReport(report, true);
         return -1;
     }
 

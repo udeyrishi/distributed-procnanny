@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "ClientManager.h"
+#include "ClientMessage.h"
 #include "LogReport.h"
 
 void saveLogReport(LogReport message);
@@ -15,5 +16,5 @@ void logServerInfo(uint16_t port);
 //void logProcessKill(pid_t pid, const char* name, unsigned long int duration);
 //void logSelfDying(pid_t pid, const char* name, unsigned long int duration);
 void logSighupCatch(char* configFileName);
-void logUnexpectedClientMessageCode(int sock, char messageCode);
+void logUnexpectedClientMessageCode(int sock, ClientMessageStatusCode messageCode);
 #endif

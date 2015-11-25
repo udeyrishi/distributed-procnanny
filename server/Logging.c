@@ -237,7 +237,7 @@ void logServerInfo(uint16_t port)
     }
 }
 
-void logUnexpectedClientMessageCode(int sock, char messageCode)
+void logUnexpectedClientMessageCode(int sock, ClientMessageStatusCode messageCode)
 {
     LogReport report;
     report.type = DEBUG;

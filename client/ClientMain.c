@@ -1,5 +1,4 @@
-//#include "Logging.h"
-#include "LogReport.h"
+#include "Logging.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "Process.h"
@@ -19,11 +18,11 @@ int main(int argc, char** argv)
         LogReport report;
         report.message = "Server host name and port number needed as arguments.";
         report.type = ERROR;
-        logger(report, true);
+        saveLogReport(report, true);
         return -1;
     }
     
-    if (!killOtherProcessAndVerify(PROGRAM_NAME, logger))
+    if (!killOtherProcessAndVerify(PROGRAM_NAME, saveLogReport))
     {
         exit(-1);
     }
@@ -31,7 +30,8 @@ int main(int argc, char** argv)
     char* serverHostName = argv[1];
     int serverPort = atoi(argv[2]);
     int sock = makeClientSocket(serverHostName, serverPort);
-
+    initializeLogger(sock);
+    
     int killCount = monitor(REFRESH_RATE, sock);
     //int killCount = monitor(REFRESH_RATE, argc, argv);
     printf("kill count: %d\n", killCount);

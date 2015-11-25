@@ -23,11 +23,13 @@ CLIENT_SRC = client/ClientMain.c \
 			 client/ProcessManager.c \
 			 client/RegisterEntry.c \
 			 client/Client.c \
+			 client/Logging.c \
 			 common/Process.c \
 			 common/Utils.c \
 			 common/LogReport.c \
 			 common/MonitorRequest.c \
 			 common/ProgramIO.c \
+			 common/ClientMessage.c \
 			 common/CommunicationManager.c \
 			 common/memwatch.c
 CLIENT_OBJS = $(CLIENT_SRC:.c=.o)

@@ -4,16 +4,26 @@
 #include "Utils.h"
 #include "memwatch.h"
 
-char readClientMessageStatusCode(int sock, LoggerPointer logger)
+ClientMessageStatusCode readClientMessageStatusCode(int sock, LoggerPointer logger)
 {
-    char messageCode;
-    ssize_t oneByte = readData(sock, &messageCode, sizeof(char), logger);
-    if (oneByte < 0)
+    ClientMessageStatusCode messageCode;
+    ssize_t size = readData(sock, &messageCode, sizeof(messageCode), logger);
+    if (size < 0)
     {
         exit(-1);
     }
-    assert(oneByte == sizeof(char));
+    assert(size == sizeof(ClientMessageStatusCode));
     return messageCode;
+}
+
+bool writeClientMessageStatusCode(int sock, ClientMessageStatusCode statusCode, LoggerPointer logger)
+{
+    ssize_t size = writeData(sock, &statusCode, sizeof(statusCode), logger);
+    if (size < 0)
+    {
+        return false;
+    }
+    return true;
 }
 
 LogReport readLogMessage(int sock, const char* clientName,  LoggerPointer logger)
@@ -35,4 +45,19 @@ LogReport readLogMessage(int sock, const char* clientName,  LoggerPointer logger
     report.message = stringJoin(c, clientName);
     free(c);
     return report;
+}
+
+bool writeLogMessage(int serverSocket, LogReport report, LoggerPointer logger)
+{
+    if (!writeString(serverSocket, report.message, logger))
+    {
+        return false;
+    }
+
+    if (writeData(serverSocket, &(report.type), sizeof(report.type), logger) < 0)
+    {
+        return false;
+    }
+
+    return true;
 }

@@ -3,9 +3,13 @@
 
 #include "LogReport.h"
 
-#define LOG_MESSAGE (char)0xFFFF
-#define INT_ACK (char)0xFFFE
+typedef char ClientMessageStatusCode;
 
-char readClientMessageStatusCode(int sock, LoggerPointer logger);
+#define LOG_MESSAGE (ClientMessageStatusCode)0xFFFF
+#define INT_ACK (ClientMessageStatusCode)0xFFFE
+
+ClientMessageStatusCode readClientMessageStatusCode(int sock, LoggerPointer logger);
+bool writeClientMessageStatusCode(int sock, ClientMessageStatusCode statusCode, LoggerPointer logger);
 LogReport readLogMessage(int sock, const char* clientName, LoggerPointer logger);
+bool writeLogMessage(int serverSocket, LogReport report, LoggerPointer logger);
 #endif
