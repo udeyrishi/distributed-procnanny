@@ -11,12 +11,13 @@
 #include <unistd.h>
 #include "memwatch.h"
 
-static MonitorRequest** monitorRequests = NULL;
-static int configLength = 0;
 static RegisterEntry* root = NULL;
 
 static int writingToParent = 0;
 static int readingFromParent = 0;
+
+static MonitorRequest** monitorRequests = NULL;
+static int configLength = 0;
 
 static bool sigintReceived = false;
 static bool sighupReceived = false;
@@ -196,45 +197,12 @@ void setupMonitoring(bool isRetry, char* processName, unsigned long int duration
     destroyProcessArray(runningProcesses, num);
 }
 
-//private
-/*
-void rereadConfig(int argc, char** argv)
-{
-    destroyMonitorRequestArray(monitorRequests, configLength);
-    monitorRequests = NULL;
-    configLength = 0;
-    configLength = getProcessesToMonitor(argc, argv, &monitorRequests);
-
-    if (configLength == -1)
-    {
-        // Already logged
-        exit(-1);
-    }
-}
-
-//private
-void sigintHandler(int signum)
-{
-    if (signum == SIGINT)
-    {
-        sigintReceived = true;
-    }
-}
-
-//private
-void sighupHandler(int signum)
-{
-    if (signum == SIGHUP)
-    {
-        sighupReceived = true;
-    }
-}
-*/
-
-int monitor(int refreshRate, int argc, char** argv)
+//int monitor(int refreshRate, int argc, char** argv)
+int monitor(int refreshRate, int serverSocket)
 {
     //signal(SIGINT, sigintHandler);
     //signal(SIGHUP, sighupHandler);
+    configLength = readConfig(serverSocket, &monitorRequests, logger);
 
     root = constuctorRegisterEntry((pid_t)0, NULL, NULL);
     RegisterEntry* tail = root;

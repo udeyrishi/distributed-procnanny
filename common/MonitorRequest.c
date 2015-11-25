@@ -134,8 +134,6 @@ bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPo
     return true;
 }
 
-#include <stdio.h>
-
 int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger)
 {
     int configLength = (int)readUInt(sock, logger);

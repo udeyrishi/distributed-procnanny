@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include "LogReport.h"
+#include "MonitorRequest.h"
 
 #define CHILD (pid_t)0
 
@@ -14,5 +15,5 @@ typedef struct
 } MonitorMessage;
 
 void logger(LogReport report, bool verbose);
-int monitor(int refreshRate, int argc, char** argv);
+int monitor(int refreshRate, int serverSocket);
 #endif
