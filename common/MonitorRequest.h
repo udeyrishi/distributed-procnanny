@@ -2,13 +2,15 @@
 #define __MONITOR_REQUEST_H__
 
 #include "LogReport.h"
+#include <stdint.h>
 
 typedef struct
 {
 	char* processName;
-	unsigned long int monitorDuration;
+	uint32_t monitorDuration;
 } MonitorRequest;
 
+MonitorRequest* monitorRequestConstructor(char* processName, uint32_t monitorDuration, LoggerPointer logger);
 MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport);
 void destroyMonitorRequest(MonitorRequest* this);
 void destroyMonitorRequestArray(MonitorRequest** requestArray, int size);

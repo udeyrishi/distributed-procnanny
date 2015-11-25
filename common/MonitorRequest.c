@@ -5,20 +5,32 @@
 #include <assert.h>
 #include "memwatch.h"
 
-MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport)
+MonitorRequest* monitorRequestConstructor(char* processName, uint32_t monitorDuration, LoggerPointer logger)
 {
     MonitorRequest* this = (MonitorRequest*)malloc(sizeof(MonitorRequest));
     LogReport report;
     if (!checkMallocResult(this, &report))
     {
-        saveLogReport(report, false);
+        logger(report, false);
         return NULL;
     }
 
-    this->processName = getNextStrTokString(requestString);
+    this->processName = copyString(processName);
+    this->monitorDuration = monitorDuration;
+
+    return this;
+}
+
+MonitorRequest* constructMonitorRequest(char* requestString, LoggerPointer saveLogReport)
+{
+    char* processName = getNextStrTokString(requestString);
     char* monitorDuration = getNextStrTokString(NULL);
-    this->monitorDuration = strtoul(monitorDuration, NULL, 10);
+    unsigned long int duration = strtoul(monitorDuration, NULL, 10);
     free(monitorDuration);
+    monitorDuration = NULL;
+    assert(duration <= (unsigned long int)UINT32_MAX);
+    MonitorRequest* this = monitorRequestConstructor(processName, (uint32_t)duration, saveLogReport);
+    free(processName);
     return this;
 }
 
@@ -122,30 +134,31 @@ bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPo
     return true;
 }
 
+#include <stdio.h>
+
 int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger)
 {
     int configLength = (int)readUInt(sock, logger);
-
-    *requestBuffer = (MonitorRequest**)malloc(sizeof(MonitorRequest*)*configLength);
+    MonitorRequest** requests = (MonitorRequest**)malloc(sizeof(MonitorRequest*)*configLength);
 
     LogReport error;
-    if (!checkMallocResult(*requestBuffer, &error))
+    if (!checkMallocResult(requests, &error))
     {
         logger(error, false);
         return -1;
     }
 
     int i;
+    char* processName;
+    uint32_t monitorDuration;
     for (i = 0; i < configLength; ++i)
     {
-        char* processName = readString(sock, logger);
-        unsigned long int monitorDuration = (unsigned long int)readUInt(sock, logger);
-        char* line = stringULongJoin(processName, monitorDuration);
+        processName = readString(sock, logger);
+        monitorDuration = readUInt(sock, logger);
+        requests[i] = monitorRequestConstructor(processName, monitorDuration, logger);
         free(processName);
-        processName = NULL;
-        (*requestBuffer)[i] = constructMonitorRequest(line, logger);
-        free(line);
     }
 
+    *requestBuffer = requests;
     return configLength;
 }
