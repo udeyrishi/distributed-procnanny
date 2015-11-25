@@ -30,6 +30,10 @@ int main(int argc, char** argv)
     char* serverHostName = argv[1];
     int serverPort = atoi(argv[2]);
     int sock = makeClientSocket(serverHostName, serverPort);
+    if (sock < 0)
+    {
+        return -1;
+    }
     initializeLogger(sock);
 
     int killCount = monitor(REFRESH_RATE, sock);

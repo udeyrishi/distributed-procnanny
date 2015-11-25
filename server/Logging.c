@@ -45,12 +45,12 @@ void saveLogReport(LogReport report)
     free(output);
 }
 
-void logSighupCatch(char* configFileName)
+void logSighupCatch(const char* configFileName)
 {
     LogReport sighupReport;
     sighupReport.type = INFO;
     char* message = stringJoin("Caught SIGHUP. Configuration file '", configFileName);
-    char* message2 = stringJoin(message, "' re-read.");
+    char* message2 = stringJoin(message, "' re-read and sent to all the clients.");
     free(message);
     message = NULL;
     sighupReport.message = message2;

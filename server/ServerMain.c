@@ -8,10 +8,10 @@
 #define PORT 3010
 const char* PROGRAM_NAME = "procnanny.server";
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
     logServerInfo(PORT);
-    
+
     if (!killOtherProcessAndVerify(PROGRAM_NAME, logger))
     {
         exit(-1);
@@ -26,7 +26,5 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    createServer(PORT, argv[1]);
-    
-    return 0;
+    return createServer(PORT, argv[1]);
 }

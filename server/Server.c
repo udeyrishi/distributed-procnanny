@@ -105,15 +105,16 @@ bool setupSocketToListen(int sock)
 
 //private
 // Source: http://www.gnu.org/software/libc/manual/html_node/Inet-Example.html#Inet-Example
-void makeServerSocket(uint16_t port)
+bool makeServerSocket(uint16_t port)
 {
     int sock = createNewInternetSocket(logger);
     if (sock < 0 || !bindInternetSocketToPort(sock, port) || !setupSocketToListen(sock))
     {
-        exit(-1);
+        return false;
     }
 
     masterSocket = sock;
+    return true;
 }
 
 // private
@@ -247,20 +248,25 @@ void sendPendingWrites()
 {
     if (sighupReceived)
     {
+        logSighupCatch(configLocation);
         sighupReceived = false;
         rereadConfig();
         forEachClient(sendHupMessage);
     }
 }
 
-void createServer(uint16_t port, const char* configPath)
+int createServer(uint16_t port, const char* configPath)
 {
     // setup
     signal(SIGINT, sigintHandler);
     signal(SIGHUP, sighupHandler);
     configLocation = configPath;
     rereadConfig();
-    makeServerSocket(port);
+    if (!makeServerSocket(port))
+    {
+        destroyGlobals();
+        return -1;
+    }
     FD_ZERO(&activeSockets);
     FD_SET(masterSocket, &activeSockets);
 
@@ -272,4 +278,5 @@ void createServer(uint16_t port, const char* configPath)
     forEachClient(sendSigintAndUpdateKillCount);
     logFinalServerReport(getRootClient());
     destroyGlobals();
+    return 0;
 }
