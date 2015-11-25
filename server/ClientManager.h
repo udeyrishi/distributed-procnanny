@@ -15,7 +15,7 @@ typedef struct __Client
 
 typedef void (* ClientAction)(Client*);
 
-void addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger);
+Client* addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger);
 void cleanupClientChain();
 void forEachClient(ClientAction action);
 

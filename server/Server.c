@@ -123,7 +123,7 @@ void registerNewClient()
     size_t size = sizeof(client);
     int clientSocket = accept(masterSocket, (struct sockaddr *)&client, &size);
 
-    addClient(&client, clientSocket, logger);
+    Client* newClient = addClient(&client, clientSocket, logger);
 
     if (clientSocket < 0)
     {
@@ -139,6 +139,8 @@ void registerNewClient()
     {
         exit(-1);
     }
+
+    logClientInit(newClient->hostName);
 }
 
 //private

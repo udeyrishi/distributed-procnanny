@@ -148,6 +148,7 @@ void logFlash()
     }
 }
 
+/*
 void logParentInit()
 {
     logFlash();
@@ -157,6 +158,16 @@ void logParentInit()
     parentInfo.type = INFO;
     saveLogReport(parentInfo);
     free(parentInfo.message);
+}
+*/
+
+void logClientInit(const char* clientName)
+{
+    LogReport report;
+    report.message = stringJoin("New client initialised. Config file sent. Client node: ", clientName);
+    report.type = INFO;
+    saveLogReport(report);
+    free(report.message);
 }
 
 char* getServerInfoMessage(uint16_t port)

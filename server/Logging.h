@@ -9,7 +9,7 @@
 void saveLogReport(LogReport message);
 void logFinalServerReport(Client* root);
 //void logFinalReport(int killCount); // different form though
-void logParentInit(); // rename to client init
+void logClientInit(const char* clientName);
 void logServerInfo(uint16_t port);
 //void logProcessMonitoringInit(char* processName, pid_t pid);
 //void logProcessKill(pid_t pid, const char* name, unsigned long int duration);

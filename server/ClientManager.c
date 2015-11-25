@@ -7,7 +7,7 @@
 static Client* rootClient = NULL;
 static Client* tailClient = NULL;
 
-void addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger)
+Client* addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger)
 {
     Client* newClient = (Client*)malloc(sizeof(Client));
     LogReport report;
@@ -36,6 +36,8 @@ void addClient(const struct sockaddr_in* client, int _sock, LoggerPointer logger
         tailClient->nextClient = newClient;
         tailClient = newClient;
     }
+
+    return newClient;
 }
 
 void cleanupClientChain()
