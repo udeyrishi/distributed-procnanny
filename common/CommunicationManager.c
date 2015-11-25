@@ -16,7 +16,8 @@ uint32_t readUInt(int sock, LoggerPointer logger)
 
 bool writeUInt(int sock, uint32_t num, LoggerPointer logger)
 {
-    char* bytes = (char *)htonl(num);
+    num = htonl(num);
+    char* bytes = (char *)&num;
     if (writeData(sock, bytes, sizeof(num), logger) < 0)
     {
         return false;
@@ -48,7 +49,7 @@ char* readString(int fd, LoggerPointer logger)
 
 bool writeString(int fd, char* string, LoggerPointer logger)
 {
-    size_t length = strlen(string);
+    size_t length = strlen(string) + 1;
 
     if (!writeUInt(fd, length, logger) || writeData(fd, string, length, logger) < 0)
     {
