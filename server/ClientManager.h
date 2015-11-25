@@ -1,5 +1,5 @@
-#ifndef __SERVER_CLIENT__
-#define __SERVER_CLIENT__
+#ifndef __CLIENT_MANAGER__
+#define __CLIENT_MANAGER__
 
 #include "LogReport.h"
 #include <stdint.h>

@@ -3,7 +3,7 @@
 
 #include <unistd.h>
 #include <stdint.h>
-#include "Client.h"
+#include "ClientManager.h"
 #include "LogReport.h"
 
 void saveLogReport(LogReport message);

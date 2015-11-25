@@ -6,7 +6,7 @@ INCLUDES = -Icommon
 SERVER_SRC = server/ServerMain.c \
 			 server/Logging.c \
 			 server/Server.c \
-			 server/Client.c \
+			 server/ClientManager.c \
 			 common/Utils.c \
 			 common/Process.c \
 			 common/ProgramIO.c \

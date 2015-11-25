@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "Utils.h"
 #include "ServerMessage.h"
-#include "Client.h"
+#include "ClientManager.h"
 #include "memwatch.h"
 
 #define MAX_CONNECTIONS 5
