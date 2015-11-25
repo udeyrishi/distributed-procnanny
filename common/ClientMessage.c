@@ -1,6 +1,7 @@
 #include "ClientMessage.h"
 #include "CommunicationManager.h"
 #include <assert.h>
+#include "Utils.h"
 #include "memwatch.h"
 
 char readClientMessageStatusCode(int sock, LoggerPointer logger)
@@ -15,7 +16,7 @@ char readClientMessageStatusCode(int sock, LoggerPointer logger)
     return messageCode;
 }
 
-LogReport readLogMessage(int sock, LoggerPointer logger)
+LogReport readLogMessage(int sock, const char* clientName,  LoggerPointer logger)
 {
     LogReport report;
     report.message = readString(sock, logger);
@@ -29,5 +30,9 @@ LogReport readLogMessage(int sock, LoggerPointer logger)
         exit(-1);
     }
     assert(size == sizeof(report.type));
+    char* c = stringJoin(report.message, " on node ");
+    free(report.message);
+    report.message = stringJoin(c, clientName);
+    free(c);
     return report;
 }

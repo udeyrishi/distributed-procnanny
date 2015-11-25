@@ -20,4 +20,5 @@ void cleanupClientChain();
 void forEachClient(ClientAction action);
 
 Client* getRootClient();
+Client* getClientBySocket(int sock);
 #endif

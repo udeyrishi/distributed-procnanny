@@ -146,7 +146,18 @@ void registerNewClient()
 //private
 void logClientMessage(int sock)
 {
-    LogReport report = readLogMessage(sock, logger);
+    Client* client = getClientBySocket(sock);
+    if (client == NULL)
+    {
+        LogReport error;
+        error.message = stringNumberJoin("LogReport message from unknown socket: ", sock);
+        error.type = DEBUG;
+        logger(error, false);
+        free(error.message);
+        exit(-1);
+    }
+    char* clientName = client->hostName;
+    LogReport report = readLogMessage(sock, clientName, logger);
     logger(report, false);
     free(report.message);
 }

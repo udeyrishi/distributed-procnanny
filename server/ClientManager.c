@@ -66,3 +66,22 @@ Client* getRootClient()
 {
     return rootClient;
 }
+
+Client* getClientBySocket(int sock)
+{
+    Client* current = rootClient;
+
+    while (current != NULL)
+    {
+        if (current->sock == sock)
+        {
+            return current;
+        }
+        else
+        {
+            current = current->nextClient;
+        }
+    }
+
+    return NULL;
+}
