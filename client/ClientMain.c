@@ -1,6 +1,5 @@
 #include "Logging.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include "Process.h"
 #include "ProcessManager.h"
 #include "ClientSocket.h"

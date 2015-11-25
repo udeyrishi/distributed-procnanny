@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "Logging.h"
 #include "Process.h"
 #include "MonitorRequest.h"
