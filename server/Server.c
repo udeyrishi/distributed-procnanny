@@ -121,7 +121,7 @@ bool makeServerSocket(uint16_t port)
 void registerNewClient()
 {
     struct sockaddr_in client;
-    size_t size = sizeof(client);
+    socklen_t size = sizeof(client);
     int clientSocket = accept(masterSocket, (struct sockaddr *)&client, &size);
 
     Client* newClient = addClient(&client, clientSocket, logger);
