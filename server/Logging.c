@@ -133,7 +133,6 @@ void logServerInfo(uint16_t port)
     report.type = SERVER_INFO;
     report.message = getServerInfoMessage(port);
     saveLogReport(report);
-    printLogReport(report);
     free(report.message);
 
     const char* serverInfoFile = getenv(SERVER_INFO_LOGFILE_ENV_VAR);
