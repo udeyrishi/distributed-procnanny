@@ -7,13 +7,18 @@
 ClientMessageStatusCode readClientMessageStatusCode(int sock, LoggerPointer logger)
 {
     ClientMessageStatusCode messageCode;
-    ssize_t size = readData(sock, &messageCode, sizeof(messageCode), logger);
-    if (size < 0)
+    OperationResult_raw readStatus = readData(sock, &messageCode, sizeof(messageCode), logger);
+    switch (readStatus.rawStatus.status)
     {
-        exit(-1);
+        case FAILED:
+            return FAILED;
+
+        case FD_CLOSED:
+            return CLOSED;
+
+        default:
+            return messageCode;
     }
-    assert(size == sizeof(ClientMessageStatusCode));
-    return messageCode;
 }
 
 bool writeClientMessageStatusCode(int sock, ClientMessageStatusCode statusCode, LoggerPointer logger)

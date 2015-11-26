@@ -46,7 +46,7 @@ void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
     {
         return;
     }
-    
+
     int i;
     for (i = 0; i < size; ++i)
     {
@@ -60,10 +60,10 @@ int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorReque
 {
     LogReport report;
     report.message = (char*)NULL;
-    
+
     int configLines = 0;
     char** config = readFile(configPath, &configLines, &report);
-    
+
     if (report.message != NULL)
     {
         if (configLines > 0)
@@ -84,7 +84,7 @@ int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorReque
     }
 
     int i;
-    for (i = 0; i < configLines; ++i) 
+    for (i = 0; i < configLines; ++i)
     {
         MonitorRequest* request = constructMonitorRequest(config[i], saveLogReport);
 
@@ -119,7 +119,7 @@ bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPo
     int i;
     for (i = 0; i < configLength; ++i)
     {
-        if (!(writeString(sock, newConfig[i]->processName, logger) && 
+        if (!(writeString(sock, newConfig[i]->processName, logger) &&
               writeUInt(sock, newConfig[i]->monitorDuration, logger)))
         {
             LogReport report;
@@ -136,7 +136,28 @@ bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPo
 
 int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger)
 {
-    int configLength = (int)readUInt(sock, logger);
+    OperationResult_uint32_t configReadStatus = readUInt(sock, logger);
+    if (configReadStatus.rawStatus.status != DONE)
+    {
+        LogReport report;
+        report.type = ERROR;
+        report.message = "Failed to read config from server. Error code: ";
+
+        char* statusString = operationStatusToString(configReadStatus.rawStatus.status);
+        report.message = stringJoin(report.message, statusString);
+        logger(report, false);
+        free(report.message);
+        return -1;
+    }
+    if (configReadStatus.data > (uint32_t)MAX_INT)
+    {
+        LogReport report;
+        report.message = "Config length greater than max int value";
+        report.type = ERROR;
+        logger(report, false);
+        return -1;
+    }
+    int configLength = (int)configReadStatus.data;
     MonitorRequest** requests = (MonitorRequest**)malloc(sizeof(MonitorRequest*)*configLength);
 
     LogReport error;
@@ -151,8 +172,23 @@ int readConfig(int sock, MonitorRequest*** requestBuffer, LoggerPointer logger)
     uint32_t monitorDuration;
     for (i = 0; i < configLength; ++i)
     {
-        processName = readString(sock, logger);
-        monitorDuration = readUInt(sock, logger);
+        OperationResult_string procNameStatus = readString(sock, logger);
+        if (procNameStatus.rawStatus.status != DONE)
+        {
+            destroyMonitorRequestArray(requests, i);
+            return -1;
+        }
+        processName = procNameStatus.data;
+
+        OperationResult_uint32_t monitorDurationStatus = readUInt(sock, logger);
+        if (monitorDurationStatus.rawStatus.status != DONE)
+        {
+            destroyMonitorRequestArray(requests, i);
+            return -1;
+        }
+
+
+        monitorDuration = monitorDurationStatus.data;
         requests[i] = monitorRequestConstructor(processName, monitorDuration, logger);
         free(processName);
     }

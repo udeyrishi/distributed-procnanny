@@ -163,6 +163,15 @@ void logClientMessage(int sock)
     free(report.message);
 }
 
+void removeClient(int sock)
+{
+    LogReport report;
+    report.type = DEBUG;
+    report.message = "removeClient not implemented yet.";
+    logger(report, false);
+    exit(-1);
+}
+
 //private
 void dataReceivedCallback(int sock)
 {
@@ -173,14 +182,37 @@ void dataReceivedCallback(int sock)
     else
     {
         ClientMessageStatusCode messageCode = readClientMessageStatusCode(sock, logger);
-        if (messageCode == LOG_MESSAGE)
+
+        LogReport;
+        switch (messageCode)
         {
-            logClientMessage(sock);
-        }
-        else
-        {
-            logUnexpectedClientMessageCode(sock, messageCode);
-            exit(-1);
+            case LOG_MESSAGE:
+                logClientMessage(sock);
+                break;
+
+            case FAILED:
+                report.type = ERROR;
+                report.message = "Failed to receive message status code from client ";
+                report.message = stringJoin(report.message, getClientBySocket(sock)->hostName);
+                logger(report, false);
+                free(report.message);
+                report.message = NULL;
+                break;
+
+            case CLOSED:
+                report.type = INFO;
+                report.message = "Client shut down. Hostname: ";
+                report.message = stringJoin(report.message, getClientBySocket(sock)->hostName);
+                logger(report, false);
+                free(report.message);
+                report.message = NULL;
+                removeClient(sock);
+                break;
+
+            default:
+                logUnexpectedClientMessageCode(sock, messageCode);
+                break;
+
         }
     }
 }
@@ -203,15 +235,61 @@ void sendSigintAndUpdateKillCount(Client* client)
         logClientMessage(client->sock);
     }
 
-    if (messageCode == INT_ACK)
+    OperationResult_uint32_t killCountStatus;
+
+    LogReport report;
+    report.type = DEBUG;
+
+    switch (messageCode)
     {
-        client->finalKillCount = readUInt(client->sock, logger);
-        close(client->sock);
+        case INT_ACK:
+            killCountStatus = readUInt(client->sock, logger);
+
+            if (killCountStatus.rawStatus.status == DONE)
+            {
+                client->finalKillCount = killCountStatus.data;
+            }
+            else
+            {
+                report.type = ERROR;
+                char* c = stringJoin("Failed to receive the final kill count for client ", client->hostName);
+                char* c2 = stringJoin(c, ". Will report it as 0. Error code: ");
+                free(c);
+                report.message = stringJoin(c2, operationStatusToString(killCountStatus.rawStatus.status));
+                free(c2);
+            }
+
+            break;
+
+        case FAILED:
+            report.type = ERROR;
+            char* c = stringJoin("Failed to receive the final kill count for client ", client->hostName);
+            char* c2 = stringJoin(c, ". Will report it as 0. Error code: ");
+            free(c);
+            report.message = stringJoin(c2, operationStatusToString(killCountStatus.rawStatus.status));
+            free(c2);
+            break;
+
+        case CLOSED:
+            report.type = ERROR;
+            char* c = stringJoin("Client died before sending the final kill count. Host name: ", client->hostName);
+            char* c2 = stringJoin(c, ". Will report it as 0. Error code: ");
+            free(c);
+            report.message = stringJoin(c2, operationStatusToString(killCountStatus.rawStatus.status));
+            free(c2);
+            break;
+
+        default:
+            logUnexpectedClientMessageCode(client->sock, messageCode);
+            break;
     }
-    else
+
+    if (report.type == ERROR)
     {
-        logUnexpectedClientMessageCode(client->sock, messageCode);
-        exit(-1);
+        client->finalKillCount = 0;
+        logger(report, false);
+        free(report.message);
+        close(client->sock)
     }
 }
 

@@ -7,6 +7,8 @@ typedef char ClientMessageStatusCode;
 
 #define LOG_MESSAGE (ClientMessageStatusCode)0xFFFF
 #define INT_ACK (ClientMessageStatusCode)0xFFFE
+#define FAILED (ClientMessageStatusCode)0xFFFD
+#define CLOSED (ClientMessageStatusCode)0xFFFC
 
 ClientMessageStatusCode readClientMessageStatusCode(int sock, LoggerPointer logger);
 bool writeClientMessageStatusCode(int sock, ClientMessageStatusCode statusCode, LoggerPointer logger);

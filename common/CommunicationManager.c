@@ -7,60 +7,94 @@
 #include "Utils.h"
 #include "memwatch.h"
 
-uint32_t readUInt(int sock, LoggerPointer logger)
+OperationResult_uint32_t readUInt(int sock, LoggerPointer logger)
 {
     char bytes[4];
-    assert(readData(sock, bytes, 4, logger) == 4);
-    return ntohl(*(uint32_t *)bytes);
+
+    OperationResult_uint32_t result;
+    result.rawStatus = readData(sock, bytes, sizeof(bytes), logger);
+    result.data = ntohl(*(uint32_t *)bytes);
+
+    return result;
 }
 
-bool writeUInt(int sock, uint32_t num, LoggerPointer logger)
+OperationResult_uint32_t writeUInt(int sock, uint32_t num, LoggerPointer logger)
 {
     num = htonl(num);
     char* bytes = (char *)&num;
-    if (writeData(sock, bytes, sizeof(num), logger) < 0)
-    {
-        return false;
-    }
-    return true;
+
+    OperationResult_uint32_t result;
+    result.rawStatus = writeData(sock, bytes, sizeof(num), logger);
+    result.data = num;
+
+    return result;
 }
 
-char* readString(int fd, LoggerPointer logger)
+OperationResult_string readString(int fd, LoggerPointer logger)
 {
-    uint32_t messageLength = readUInt(fd, logger);
-    char* string = (char*)malloc(sizeof(char)*messageLength);
+    OperationResult_uint32_t messageLength = readUInt(fd, logger);
+
+    OperationResult_string result;
+    result.data = NULL;
+
+    if (messageLength.rawStatus.status != DONE)
+    {
+        result.rawStatus = messageLength.rawStatus;
+        return result;
+    }
+
+    char* string = (char*)malloc(sizeof(char)*messageLength.data);
 
     LogReport error;
     if (!checkMallocResult(string, &error))
     {
         logger(error, false);
-        return (char*)-1;
+        exit(-1);
     }
 
-    int size = readData(fd, string, messageLength, logger);
-    if (size < 0)
+    result.rawStatus = readData(fd, string, messageLength, logger);
+
+    if (result.rawStatus.status == DONE)
+    {
+        result.data = string;
+    }
+    else
     {
         free(string);
-        return (char*)-1;
     }
-    assert(size == messageLength);
-    return string;
+
+    result.rawStatus.dataSize += messageLength.rawStatus.dataSize;
+    return result;
 }
 
-bool writeString(int fd, char* string, LoggerPointer logger)
+OperationResult_string writeString(int fd, const char* string, LoggerPointer logger)
 {
     size_t length = strlen(string) + 1;
 
-    if (!writeUInt(fd, length, logger) || writeData(fd, string, length, logger) < 0)
+    OperationResult_string result;
+    result.data = NULL;
+
+    OperationResult_uint32_t lengthWriteStatus = writeUInt(fd, length, logger);
+    if (lengthWriteStatus.rawStatus.status != DONE)
     {
-        return false;
+        result.rawStatus = lengthWriteStatus.rawStatus;
+        return result;
     }
-    return true;
+
+    result.rawStatus = writeData(fd, string, length, logger);
+    if (result.rawStatus == DONE)
+    {
+        result.data = string;
+    }
+
+    result.rawStatus.dataSize += lengthWriteStatus.rawStatus.dataSize;
+
+    return result;
 }
 
 // Source: https://eclass.srv.ualberta.ca/mod/resource/view.php?id=1766878
 // Jim Frost tutorial
-ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
+OperationResult_raw writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
 {
     if (size > (size_t)SSIZE_MAX)
     {
@@ -70,11 +104,14 @@ ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
         logger(report, false);
         exit(-1);
     }
-    size_t total = 0;
 
-    while (total < size)
+    OperationResult_raw result;
+    result.status = DONE;
+    result.dataSize = 0;
+
+    while (result.dataSize < size)
     {
-        ssize_t thisTime = write(fd, buffer, size - total);
+        ssize_t thisTime = write(fd, buffer, size - result.dataSize);
         if (thisTime < 0)
         {
             LogReport report;
@@ -82,19 +119,26 @@ ssize_t writeData(int fd, const void* buffer, size_t size, LoggerPointer logger)
             report.type = ERROR;
             logger(report, false);
             free(report.message);
-            return -1;
+
+            result.status = FAILED;
+            break;
+        }
+        else if (thisTime == 0)
+        {
+            result.status = FD_CLOSED;
+            break;
         }
         else
         {
-            total += (size_t)thisTime;
+            result.dataSize += (size_t)thisTime;
             buffer += (size_t)thisTime;
         }
     }
 
-    return (ssize_t)total;
+    return result;
 }
 
-ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
+OperationResult_raw readData(int fd, void* buffer, size_t size, LoggerPointer logger)
 {
     if (size > (size_t)SSIZE_MAX)
     {
@@ -105,11 +149,13 @@ ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
         exit(-1);
     }
 
-    size_t total = 0;
+    OperationResult_raw result;
+    result.status = DONE;
+    result.dataSize = 0;
 
-    while (total < size)
+    while (result.dataSize < size)
     {
-        ssize_t thisTime = read(fd, buffer, size - total);
+        ssize_t thisTime = read(fd, buffer, size - result.dataSize);
         if (thisTime < 0)
         {
             LogReport error;
@@ -117,18 +163,24 @@ ssize_t readData(int fd, void* buffer, size_t size, LoggerPointer logger)
             error.type = ERROR;
             logger(error, false);
             free(error.message);
-            return -1;
+
+            result.status = FAILED;
+            break;
+        }
+        else if (thisTime == 0)
+        {
+            result.status = FD_CLOSED;
+            break;
         }
         else
         {
-            total += (size_t)thisTime;
+            result.dataSize += (size_t)thisTime;
             buffer += (size_t)thisTime;
         }
     }
 
-    return (ssize_t)total;
+    return result;
 }
-
 
 // private
 struct timeval* initTimeout(const struct timeval* timeout)
