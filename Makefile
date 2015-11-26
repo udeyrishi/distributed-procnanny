@@ -66,13 +66,12 @@ clean-server:
 clean-client:
 	$(RM) $(CLIENT_TARGET) $(CLIENT_OBJECT_FILES)
 
-clean-all:
-	$(RM) $(BINS) $(OBJECT_FILES) $(LOGS)
-
 clean-logs:
 	$(RM) $(LOGS)
 
 clean:
 	$(RM) $(BINS) $(OBJECT_FILES)
+
+clean-all: clean clean-logs
 
 rebuild: clean-all all
