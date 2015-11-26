@@ -7,7 +7,7 @@
 
 const char* LOGFILE_ENV_VAR = "PROCNANNYLOGS";
 const char* SERVER_INFO_LOGFILE_ENV_VAR = "PROCNANNYSERVERINFO";
-const char* LOGFILE_FLASH = "\n===================PROCNANNY v2.0, Udey Rishi===================";
+const char* LOGFILE_FLASH = "\n===================DISTRIBUTED-PROCNANNY v1.0, Udey Rishi===================";
 
 bool appendToFile(const char* path, const char* string)
 {
