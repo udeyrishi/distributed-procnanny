@@ -1,14 +1,14 @@
 #include "Server.h"
-#include <netinet/in.h>
-#include <stdbool.h>
-#include <signal.h>
 #include "CommunicationManager.h"
 #include "MonitorRequest.h"
 #include "ClientMessage.h"
-#include <assert.h>
 #include "Utils.h"
 #include "ServerMessage.h"
 #include "ClientManager.h"
+#include <netinet/in.h>
+#include <stdbool.h>
+#include <assert.h>
+#include <signal.h>
 #include "memwatch.h"
 
 #define MAX_CONNECTIONS 5

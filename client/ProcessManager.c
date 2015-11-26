@@ -4,12 +4,12 @@
 #include "MonitorRequest.h"
 #include "RegisterEntry.h"
 #include "ProgramIO.h"
+#include "ServerMessage.h"
+#include "CommunicationManager.h"
 #include <sys/types.h>
 #include <signal.h>
 #include <assert.h>
 #include <unistd.h>
-#include "ServerMessage.h"
-#include "CommunicationManager.h"
 #include "memwatch.h"
 
 static int killCount  = 0;

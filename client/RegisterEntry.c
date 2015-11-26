@@ -1,9 +1,9 @@
 #include "RegisterEntry.h"
 #include "Utils.h"
+#include "Logging.h"
 #include <assert.h>
 #include <signal.h>
 #include <unistd.h>
-#include "Logging.h"
 #include "memwatch.h"
 
 typedef bool (* RegisterEntryPredicate)(const RegisterEntry* regEntry);

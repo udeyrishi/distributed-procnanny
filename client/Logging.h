@@ -1,9 +1,9 @@
 #ifndef __CLIENT_LOGGING__
 #define __CLIENT_LOGGING__
 
+#include "LogReport.h"
 #include <unistd.h>
 #include <stdint.h>
-#include "LogReport.h"
 
 void initializeLogger(int serverSocket);
 void saveLogReport(LogReport message, bool verbose);

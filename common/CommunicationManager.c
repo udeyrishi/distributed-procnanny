@@ -1,10 +1,10 @@
 #include "CommunicationManager.h"
+#include "Utils.h"
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
 #include <arpa/inet.h>
 #include <limits.h>
-#include "Utils.h"
 #include "memwatch.h"
 
 uint32_t readUInt(int sock, LoggerPointer logger)

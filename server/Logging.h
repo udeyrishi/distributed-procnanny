@@ -1,11 +1,11 @@
 #ifndef __SERVER_LOGGING__
 #define __SERVER_LOGGING__
 
-#include <unistd.h>
-#include <stdint.h>
 #include "ClientManager.h"
 #include "ClientMessage.h"
 #include "LogReport.h"
+#include <stdint.h>
+#include <unistd.h>
 
 void saveLogReport(LogReport message);
 void logFinalServerReport(Client* root);

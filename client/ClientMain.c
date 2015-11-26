@@ -1,9 +1,9 @@
 #include "Logging.h"
-#include <stdlib.h>
 #include "Process.h"
 #include "ProcessManager.h"
 #include "ClientSocket.h"
 #include "CommunicationManager.h"
+#include <stdlib.h>
 #include "memwatch.h"
 
 #define REFRESH_RATE 5

@@ -1,8 +1,8 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#include <stdbool.h>
 #include "LogReport.h"
+#include <stdbool.h>
 
 bool checkMallocResult(void* pointer, LogReport* report);
 char* stringJoin(const char* first, const char* second);

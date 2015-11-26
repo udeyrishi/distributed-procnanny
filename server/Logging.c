@@ -1,7 +1,7 @@
-#include <stdbool.h>
 #include "Logging.h"
 #include "Utils.h"
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "memwatch.h"
 

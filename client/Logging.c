@@ -1,8 +1,8 @@
 #include "Logging.h"
 #include "ClientMessage.h"
 #include "CommunicationManager.h"
-#include <assert.h>
 #include "Utils.h"
+#include <assert.h>
 #include "memwatch.h"
 
 static int __serverSocket = -1;

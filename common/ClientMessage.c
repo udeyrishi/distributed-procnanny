@@ -1,7 +1,7 @@
 #include "ClientMessage.h"
 #include "CommunicationManager.h"
-#include <assert.h>
 #include "Utils.h"
+#include <assert.h>
 #include "memwatch.h"
 
 ClientMessageStatusCode readClientMessageStatusCode(int sock, LoggerPointer logger)
