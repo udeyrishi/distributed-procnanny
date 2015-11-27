@@ -9,7 +9,7 @@ TA's Name: Luke
 Description
 -----------
 procnanny is a process monitoring and cleaning program as required by the Assignment #3 of CMPUT 379, Fall 2015
-at the University of Alberta. There are 2 executables: the client (procnanny.client) and the server (procnanny.server)/
+at the University of Alberta. There are 2 executables: the client (procnanny.client) and the server (procnanny.server).
 
 The client monitors the specified processes in the user's space for their execution for a specified amount of
 real time, and if any of them exceeds that period, sends them a SIGKILL. The list of processes in the user's
