@@ -1,11 +1,3 @@
-Name: Udey Chander Rishi
-Student Number: 1375308
-Unix ID: udey
-Lecture Section: EA1
-Instructor's Name: Dr. Paul Lu
-Lab Section: ED04
-TA's Name: Luke
-
 Description
 -----------
 procnanny is a process monitoring and cleaning program as required by the Assignment #3 of CMPUT 379, Fall 2015
