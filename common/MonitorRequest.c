@@ -1,3 +1,19 @@
+/*
+Copyright 2015 Udey Rishi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "MonitorRequest.h"
 #include "Utils.h"
 #include "ProgramIO.h"
@@ -46,7 +62,7 @@ void destroyMonitorRequestArray(MonitorRequest** requestArray, int size)
     {
         return;
     }
-    
+
     int i;
     for (i = 0; i < size; ++i)
     {
@@ -60,10 +76,10 @@ int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorReque
 {
     LogReport report;
     report.message = (char*)NULL;
-    
+
     int configLines = 0;
     char** config = readFile(configPath, &configLines, &report);
-    
+
     if (report.message != NULL)
     {
         if (configLines > 0)
@@ -84,7 +100,7 @@ int getProcessesToMonitor(const char* configPath, MonitorRequest*** monitorReque
     }
 
     int i;
-    for (i = 0; i < configLines; ++i) 
+    for (i = 0; i < configLines; ++i)
     {
         MonitorRequest* request = constructMonitorRequest(config[i], saveLogReport);
 
@@ -119,7 +135,7 @@ bool sendConfig(int sock, int configLength, MonitorRequest** newConfig, LoggerPo
     int i;
     for (i = 0; i < configLength; ++i)
     {
-        if (!(writeString(sock, newConfig[i]->processName, logger) && 
+        if (!(writeString(sock, newConfig[i]->processName, logger) &&
               writeUInt(sock, newConfig[i]->monitorDuration, logger)))
         {
             LogReport report;

@@ -79,6 +79,6 @@ On compiling, executables named "procnanny.server" and "procnanny.client" would 
     procnanny.client will request the procnanny.server located at the given hostname and port to give it a copy of the latest read config file, and will register itself as a client.
 
 ### Usage notes
-1. The processes to be monitored need not be running when the procnanny.client first starts. If the client notices that a process listed in the config started running, it will start monitoring it.
-2. It is possible to change the config file after deployment. Modify the config file and send a ```SIGHUP``` to the server. The server will re-read the config and send it to all the clients. The processes that were already being monitored by a client will continue to be monitored as per the old config; the new config will be applied to everything else.
-3. To shut down the system, send a ```SIGINT``` to the server. It will ask all the clients to safely shut down, and then will exit.
+* The processes to be monitored need not be running when the procnanny.client first starts. If the client notices that a process listed in the config started running, it will start monitoring it.
+* It is possible to change the config file after deployment. Modify the config file and send a ```SIGHUP``` to the server. The server will re-read the config and send it to all the clients. The processes that were already being monitored by a client will continue to be monitored as per the old config; the new config will be applied to everything else.
+* To shut down the system, send a ```SIGINT``` to the server. It will ask all the clients to safely shut down, and then will exit.
